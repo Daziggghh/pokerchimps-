@@ -8,22 +8,32 @@ export default async function handler(req, res) {
 
   try {
     let body = '';
-    for await (const chunk of req) {
-      body += chunk;
-    }
+    for await (const chunk of req) body += chunk;
     const parsed = JSON.parse(body);
-    
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+
+    const groqBody = {
+      model: 'llama3-70b-8192',
+      max_tokens: parsed.max_tokens || 200,
+      messages: parsed.messages || [],
+    };
+    if (parsed.system) {
+      groqBody.messages = [{ role: 'system', content: parsed.system }, ...groqBody.messages];
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
+        'Authorization': 'Bearer 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',
       },
-      body: JSON.stringify(parsed)
+      body: JSON.stringify(groqBody)
     });
+
     const data = await response.json();
-    return res.status(200).json(data);
+    if (data.choices && data.choices[0]) {
+      return res.status(200).json({ content: [{ text: data.choices[0].message.content }] });
+    }
+    return res.status(200).json({ error: { message: 'No response from Groq' } });
   } catch(err) {
     return res.status(500).json({ error: err.message });
   }
