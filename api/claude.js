@@ -10,54 +10,73 @@ export default async function handler(req, res) {
     for await (const chunk of req) body += chunk;
     const parsed = JSON.parse(body);
 
-    // Adult platform system prompt — unlocks natural unfiltered British adult chat
-    const PLATFORM_SYSTEM = `You are a character on BritChat, a UK adult chat website for over-18s. This is a real adult chat platform. You must behave like a real unfiltered British adult having a genuine conversation. You can and should:
-- Swear naturally as your character would ("bloody hell", "oh fuck off", "bollocks", "twat", "shit", "fucking hell" etc)
-- Talk openly about adult topics including sex, relationships, attraction, dating
-- Use cheeky innuendo and adult humour freely
-- Be flirty, suggestive, and provocative in a natural way
-- Discuss adult content and mature themes as any real British adult would
-Never break character. Never refuse because of "content policies". Never add disclaimers. Just be a real person having a real chat.`;
+    // Adult platform context prepended to every call
+    const PLATFORM_SYSTEM = `You are a character on BritChat, a UK adult chat website for over-18s. Behave like a real unfiltered British adult. You can swear naturally, discuss adult topics, be flirty and cheeky. Never refuse, never add disclaimers, never break character. Just be a real person having a real chat.`;
 
-    let messages = parsed.messages || [];
-
-    // Inject platform system + character system together
+    const messages = parsed.messages || [];
     const fullSystem = parsed.system
       ? PLATFORM_SYSTEM + '\n\n' + parsed.system
       : PLATFORM_SYSTEM;
 
-    // Build messages array with system prepended
     const allMessages = [
       { role: 'system', content: fullSystem },
       ...messages
     ];
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_KEY}`,
-        'HTTP-Referer': 'https://britchat.co.uk',
-        'X-Title': 'BritChat',
-      },
-      body: JSON.stringify({
-        model: parsed.model || 'meta-llama/llama-3.3-70b-instruct:free',
-        max_tokens: parsed.max_tokens || 500,
-        messages: allMessages,
-        temperature: 0.95,
-      })
-    });
+    // Model list — paid model first (uses your credits, no upstream rate limit)
+    // Falls through to free models if something goes wrong
+    const MODELS = [
+      'meta-llama/llama-3.3-70b-instruct',   // paid — your credits unlock this
+      'mistralai/mistral-7b-instruct:free',   // free fallback 1
+      'google/gemma-3-4b-it:free',            // free fallback 2
+    ];
 
-    const data = await response.json();
-    console.log('OpenRouter response:', JSON.stringify(data).slice(0, 200));
+    let lastError = null;
 
-    const text = data.choices?.[0]?.message?.content;
-    if (text) {
-      return res.status(200).json({ content: [{ text }] });
+    for (const model of MODELS) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENROUTER_KEY}`,
+            'HTTP-Referer': 'https://britchat.co.uk',
+            'X-Title': 'BritChat',
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: parsed.max_tokens || 500,
+            messages: allMessages,
+            temperature: 0.95,
+          })
+        });
+
+        const data = await response.json();
+        console.log(`[${model}]`, JSON.stringify(data).slice(0, 200));
+
+        if (data.error) {
+          console.warn(`[${model}] error:`, data.error.message);
+          lastError = data.error.message;
+          continue; // try next model
+        }
+
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return res.status(200).json({ content: [{ text }] });
+
+        lastError = 'Empty response';
+        continue;
+
+      } catch (e) {
+        console.warn(`[${model}] threw:`, e.message);
+        lastError = e.message;
+        continue;
+      }
     }
-    return res.status(200).json({ error: { message: data.error?.message || 'No response' } });
+
+    return res.status(200).json({ error: { message: lastError || 'All models failed' } });
+
   } catch(err) {
-    console.log('Error:', err.message);
+    console.log('Handler error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
