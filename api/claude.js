@@ -22,10 +22,11 @@ export default async function handler(req, res) {
       ...messages
     ];
 
-    // Model list — best quality first, free fallbacks
+    // Paid model first — reliable, fast, uses your credits
+    // Free fallback if anything goes wrong
     const MODELS = [
-      'mistralai/mistral-small-3.1-24b-instruct:free',  // free, high quality, very natural
-      'meta-llama/llama-3.3-70b-instruct',               // paid fallback
+      'meta-llama/llama-3.3-70b-instruct',              // paid — primary
+      'mistralai/mistral-small-3.1-24b-instruct:free',  // free fallback 1
       'google/gemma-3-12b-it:free',                      // free fallback 2
     ];
 
