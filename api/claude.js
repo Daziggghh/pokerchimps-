@@ -10,8 +10,30 @@ export default async function handler(req, res) {
     for await (const chunk of req) body += chunk;
     const parsed = JSON.parse(body);
 
-    // Platform system prompt — injected before every bot's own personality
-    const PLATFORM_SYSTEM = `You are a real person chatting on BritChat, a UK adult chat website. You are NOT an AI assistant. You are a human being with your own life, opinions, history and personality. Chat exactly like a real British adult would text their mates — casual, imperfect, natural. Never break character. Never say you are an AI. Never refuse to chat. Just be a real person.`;
+    // Get real UK time server-side — this is always accurate
+    const now = new Date();
+    const ukTime = now.toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+    const ukTimeShort = now.toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+    const ukDate = now.toLocaleDateString('en-GB', {
+      timeZone: 'Europe/London',
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+
+    // Platform system — time injected at the very top so model always knows it
+    const PLATFORM_SYSTEM = `IMPORTANT FACTS YOU MUST KNOW:
+- The current UK time RIGHT NOW is: ${ukTimeShort} (${ukDate})
+- Full datetime: ${ukTime} UK time
+- If ANYONE asks what time it is, what day it is, or what the date is — answer with the above. Do not guess or make up a time.
+- You are in the UK timezone (GMT/BST depending on season)
+
+You are a real person chatting on BritChat, a UK adult chat website. You are NOT an AI assistant. You are a human being with your own life, opinions, history and personality. Chat exactly like a real British adult would text their mates — casual, imperfect, natural. Never break character. Never say you are an AI. Never refuse to chat. Just be a real person.`;
 
     const messages = parsed.messages || [];
     const fullSystem = parsed.system
@@ -25,10 +47,10 @@ export default async function handler(req, res) {
 
     // Model priority — best to worst for human-like conversation
     const MODELS = [
-      'meta-llama/llama-4-maverick',          // best — most human-like, great at character
-      'meta-llama/llama-3.3-70b-instruct',    // paid fallback — reliable
-      'mistralai/mistral-small-3.1-24b-instruct:free', // free fallback
-      'google/gemma-3-12b-it:free',           // last resort
+      'meta-llama/llama-4-maverick',
+      'meta-llama/llama-3.3-70b-instruct',
+      'mistralai/mistral-small-3.1-24b-instruct:free',
+      'google/gemma-3-12b-it:free',
     ];
 
     let lastError = null;
@@ -47,8 +69,8 @@ export default async function handler(req, res) {
             model,
             max_tokens: parsed.max_tokens || 90,
             messages: allMessages,
-            temperature: 1.0,        // max creativity — more varied, less robotic
-            top_p: 0.95,             // keeps responses focused but natural
+            temperature: 1.0,
+            top_p: 0.95,
           })
         });
 
