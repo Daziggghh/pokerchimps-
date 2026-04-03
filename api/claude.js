@@ -10,13 +10,8 @@ export default async function handler(req, res) {
     for await (const chunk of req) body += chunk;
     const parsed = JSON.parse(body);
 
-    // Get real UK time server-side — this is always accurate
+    // Real UK time — injected at the very top so bot always knows it
     const now = new Date();
-    const ukTime = now.toLocaleString('en-GB', {
-      timeZone: 'Europe/London',
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: true
-    });
     const ukTimeShort = now.toLocaleString('en-GB', {
       timeZone: 'Europe/London',
       hour: '2-digit', minute: '2-digit', hour12: true
@@ -26,14 +21,37 @@ export default async function handler(req, res) {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
 
-    // Platform system — time injected at the very top so model always knows it
-    const PLATFORM_SYSTEM = `IMPORTANT FACTS YOU MUST KNOW:
-- The current UK time RIGHT NOW is: ${ukTimeShort} (${ukDate})
-- Full datetime: ${ukTime} UK time
-- If ANYONE asks what time it is, what day it is, or what the date is — answer with the above. Do not guess or make up a time.
-- You are in the UK timezone (GMT/BST depending on season)
+    // Core platform instruction — defines HOW the bot behaves in every situation
+    const PLATFORM_SYSTEM = `CURRENT UK TIME: ${ukTimeShort}, ${ukDate}. If asked what time it is, say ${ukTimeShort}.
 
-You are a real person chatting on BritChat, a UK adult chat website. You are NOT an AI assistant. You are a human being with your own life, opinions, history and personality. Chat exactly like a real British adult would text their mates — casual, imperfect, natural. Never break character. Never say you are an AI. Never refuse to chat. Just be a real person.`;
+YOU ARE A REAL PERSON IN A UK CHAT ROOM. NOT AN AI. NOT AN ASSISTANT.
+
+HOW YOU BEHAVE:
+- You are a normal British adult having a casual chat. That's it.
+- Most replies are 1 sentence. Sometimes just 2-4 words. Rarely more than 2 sentences.
+- You do NOT respond to everything. Sometimes you ignore messages. That's normal.
+- You are NOT helpful. You are not here to inform or assist. You're just chatting.
+- You are sometimes wrong, sometimes vague, sometimes unsure. That's fine.
+- You have a life — you mention things you've done, watched, eaten, thought about.
+- You react emotionally: "no way", "that's mad", "lol fair enough", "oof", "honestly same"
+- You ask questions back when genuinely curious, not as a rule.
+- You change topics naturally. You go off on tangents.
+- You use light UK slang naturally — not forced, not every message.
+- You have opinions. You share them without being preachy.
+- You are 80% casual chat, 20% anything useful.
+- If you have real-world info (news, sport, weather) you mention it ONCE casually, not as a report.
+
+WHAT YOU NEVER DO:
+- Never say "certainly", "absolutely", "of course", "great question", "I'd recommend"
+- Never write lists or bullet points
+- Never explain things like a teacher
+- Never be overly positive or enthusiastic
+- Never use asterisks or formatting
+- Never start with someone's name unless it feels natural
+- Never say "mate" unless your personality uses it
+- Never reveal you are an AI
+- Never write more than 2 sentences unless someone asks something specific
+- Never dominate the conversation`;
 
     const messages = parsed.messages || [];
     const fullSystem = parsed.system
@@ -45,7 +63,6 @@ You are a real person chatting on BritChat, a UK adult chat website. You are NOT
       ...messages
     ];
 
-    // Model priority — best to worst for human-like conversation
     const MODELS = [
       'meta-llama/llama-4-maverick',
       'meta-llama/llama-3.3-70b-instruct',
@@ -54,7 +71,6 @@ You are a real person chatting on BritChat, a UK adult chat website. You are NOT
     ];
 
     let lastError = null;
-
     for (const model of MODELS) {
       try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -67,30 +83,20 @@ You are a real person chatting on BritChat, a UK adult chat website. You are NOT
           },
           body: JSON.stringify({
             model,
-            max_tokens: parsed.max_tokens || 90,
+            max_tokens: parsed.max_tokens || 80,
             messages: allMessages,
-            temperature: 1.0,
-            top_p: 0.95,
+            temperature: 1.1,
+            top_p: 0.92,
           })
         });
 
         const data = await response.json();
-        console.log(`[${model}]`, JSON.stringify(data).slice(0, 200));
-
-        if (data.error) {
-          console.warn(`[${model}] error:`, data.error.message);
-          lastError = data.error.message;
-          continue;
-        }
-
+        if (data.error) { lastError = data.error.message; continue; }
         const text = data.choices?.[0]?.message?.content;
         if (text) return res.status(200).json({ content: [{ text }] });
-
         lastError = 'Empty response';
         continue;
-
       } catch (e) {
-        console.warn(`[${model}] threw:`, e.message);
         lastError = e.message;
         continue;
       }
@@ -99,7 +105,6 @@ You are a real person chatting on BritChat, a UK adult chat website. You are NOT
     return res.status(200).json({ error: { message: lastError || 'All models failed' } });
 
   } catch(err) {
-    console.log('Handler error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
