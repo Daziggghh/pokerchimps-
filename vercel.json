@@ -1,22 +1,46 @@
 {
   "redirects": [
     {
-      "source": "https://britchat.com/:path*",
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "britchat.com"
+        }
+      ],
       "destination": "https://pokerchimps.com/:path*",
       "permanent": true
     },
     {
-      "source": "https://www.britchat.com/:path*",
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.britchat.com"
+        }
+      ],
       "destination": "https://pokerchimps.com/:path*",
       "permanent": true
     },
     {
-      "source": "https://britchat.co.uk/:path*",
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "britchat.co.uk"
+        }
+      ],
       "destination": "https://pokerchimps.com/:path*",
       "permanent": true
     },
     {
-      "source": "https://www.britchat.co.uk/:path*",
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.britchat.co.uk"
+        }
+      ],
       "destination": "https://pokerchimps.com/:path*",
       "permanent": true
     }
