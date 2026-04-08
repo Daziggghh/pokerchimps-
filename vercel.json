@@ -1,0 +1,24 @@
+{
+  "redirects": [
+    {
+      "source": "https://britchat.com/:path*",
+      "destination": "https://pokerchimps.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "https://www.britchat.com/:path*",
+      "destination": "https://pokerchimps.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "https://britchat.co.uk/:path*",
+      "destination": "https://pokerchimps.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "https://www.britchat.co.uk/:path*",
+      "destination": "https://pokerchimps.com/:path*",
+      "permanent": true
+    }
+  ]
+}
