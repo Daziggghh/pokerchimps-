@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Poker Chimps</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23c8960c'/><rect x='2' y='2' width='28' height='28' rx='6' fill='%230d1b2a' stroke='%23f0c060' stroke-width='1.5'/><text x='16' y='21' font-family='Georgia,serif' font-size='14' font-weight='900' fill='%23f0c060' text-anchor='middle'>PC</text></svg>" type="image/svg+xml">
+<style>
+:root{--gold:#f0c060;--gold2:#c8960c;--bg:#0d1b2a;--surface:rgba(0,0,0,.7);--border:rgba(200,150,12,.3)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:#f0ead8;user-select:none;-webkit-tap-highlight-color:transparent}
+
+/* ═══ LOGIN ═══ */
+#login{position:fixed;inset:0;z-index:99;background:radial-gradient(ellipse at 50% 40%,#1a3a22,#050d08);display:flex;align-items:center;justify-content:center}
+.lbox{background:rgba(0,0,0,.88);border:2px solid var(--gold2);border-radius:20px;padding:32px 28px;text-align:center;width:300px;box-shadow:0 0 60px rgba(200,150,12,.2)}
+.lbox-icon{font-size:52px;margin-bottom:8px}
+.lbox h2{color:var(--gold);font-size:22px;font-weight:800;margin-bottom:4px}
+.lbox p{color:rgba(255,255,255,.45);font-size:12px;margin-bottom:22px;line-height:1.6}
+.lbox input{width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--gold2);background:rgba(255,255,255,.07);color:#fff;font-size:15px;margin-bottom:12px;text-align:center}
+.lbox input::placeholder{color:rgba(255,255,255,.3)}
+.lbox input:focus{outline:none;border-color:var(--gold)}
+.lbtn{width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#b8760a,var(--gold),#b8760a);color:#000;font-size:16px;font-weight:800;cursor:pointer}
+.lbtn:hover{filter:brightness(1.1)}
+.back-a{display:block;margin-top:14px;color:rgba(255,255,255,.3);font-size:11px;text-decoration:none}
+.back-a:hover{color:var(--gold)}
+
+/* ═══ LOBBY ═══ */
+#lobby{display:none;height:100dvh;flex-direction:column;background:radial-gradient(ellipse at 50% 0%,#1a3a22 0%,#0d1b2a 60%);overflow:hidden}
+#lobby.on{display:flex}
+.lobby-hdr{flex-shrink:0;background:rgba(0,0,0,.9);border-bottom:2px solid var(--gold2);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.lobby-logo{color:var(--gold);font-size:18px;font-weight:800;margin-right:auto}
+.lobby-chips{font-size:13px;color:var(--gold);font-weight:700}
+.lobby-body{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:16px;min-height:0}
+.lobby-body::-webkit-scrollbar{width:4px}
+.lobby-body::-webkit-scrollbar-thumb{background:rgba(200,150,12,.3);border-radius:4px}
+
+.lobby-section h3{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* Room cards */
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.room-card{background:rgba(0,0,0,.55);border:1.5px solid rgba(200,150,12,.25);border-radius:14px;padding:14px 12px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px}
+.room-card:hover,.room-card:active{border-color:var(--gold);background:rgba(200,150,12,.1);transform:translateY(-2px)}
+.room-card.hu{border-color:rgba(255,106,176,.3);background:rgba(255,106,176,.06)}
+.room-card.hu:hover{border-color:#ff6ab0;background:rgba(255,106,176,.12)}
+.rc-icon{font-size:26px;margin-bottom:2px}
+.rc-name{font-size:13px;font-weight:800;color:#f5f0e8}
+.rc-blinds{font-size:11px;color:rgba(255,255,255,.45)}
+.rc-seats{font-size:10px;color:rgba(255,255,255,.35)}
+.rc-buyin{font-size:10px;color:rgba(200,150,12,.6);margin-top:1px}
+.rc-join{margin-top:6px;background:linear-gradient(135deg,#1a5820,#2a8830);border:none;color:#ccffcc;padding:7px 0;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;width:100%}
+.room-card.hu .rc-buyin{font-size:10px;color:rgba(200,150,12,.6);margin-top:1px}
+.rc-join{background:linear-gradient(135deg,#5a1850,#9a3080)}
+
+/* Leaderboard */
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 12px}
+.lb-rank{font-size:13px;font-weight:800;width:28px;text-align:center;flex-shrink:0}
+.lb-rank.g{color:var(--gold)}.lb-rank.s{color:#ccc}.lb-rank.b{color:#c87533}
+.lb-av{font-size:18px;flex-shrink:0}
+.lb-name{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-chips{font-size:12px;color:var(--gold);font-weight:700;white-space:nowrap}
+
+/* ═══ GAME SHELL ═══ */
+#game{display:none;height:100dvh;flex-direction:column}
+#game.on{display:flex}
+
+/* ═══ HEADER ═══ */
+.hdr{flex-shrink:0;background:rgba(0,0,0,.95);border-bottom:2px solid var(--gold2);padding:7px 10px;display:flex;align-items:center;gap:8px}
+.hdr-menu{background:rgba(200,150,12,.15);border:1px solid var(--gold2);color:var(--gold);padding:5px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0}
+.hdr-title{color:var(--gold);font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.badge{border-radius:16px;padding:4px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+.badge-pot{background:rgba(200,150,12,.18);border:1px solid var(--gold2);color:var(--gold)}
+.badge-phase{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55);font-size:11px}
+.btn-leave{background:#3a1010;border:1px solid #772222;color:#ffaaaa;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;flex-shrink:0}
+
+/* ═══ BODY ═══ */
+.body{flex:1;display:flex;min-height:0;overflow:hidden;min-width:0}
+.tcol{flex:1;position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 2px;overflow:hidden}
+
+/* ═══ TABLE ═══ */
+.ptable{position:relative;width:min(580px,100vw);height:min(580px,100vw)}
+@media(min-width:500px){.ptable{width:min(600px,100%);height:min(420px,80vw)}}
+
+/* ═══ FELT ═══ */
+.felt{position:absolute;left:18%;right:18%;top:20%;bottom:20%;background:radial-gradient(ellipse at 50% 48%,#2e7c3a,#1a5a28 55%,#0d3318);border-radius:50%;border:6px solid #8b5e14;box-shadow:0 0 0 4px #5a3a08,0 8px 40px rgba(0,0,0,.8),inset 0 2px 20px rgba(0,0,0,.3)}
+/* Heads-up felt — wider, less tall */
+.felt.hu-felt{left:8%;right:8%;top:28%;bottom:28%;border-radius:40%}
+.felt-inner{position:absolute;inset:10px;border:1px solid rgba(255,255,255,.07);border-radius:50%;pointer-events:none}
+.hu-felt .felt-inner{border-radius:38%}
+.felt-centre{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;pointer-events:none}
+.comm-row{display:flex;gap:5px;align-items:flex-end;justify-content:center}
+.felt-potlabel{font-size:13px;font-weight:800;color:var(--gold);background:rgba(0,0,0,.65);padding:2px 12px;border-radius:12px;white-space:nowrap}
+.felt-status{font-size:10px;color:rgba(255,255,255,.45);max-width:200px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══ SEATS ═══ */
+.seat{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;width:100px;transform:translate(-50%,-50%)}
+.seat[data-si="0"]{left:50%;top:5%}
+.seat[data-si="1"]{left:83%;top:18%}
+.seat[data-si="2"]{left:95%;top:50%}
+.seat[data-si="3"]{left:83%;top:82%}
+.seat[data-si="4"]{left:17%;top:82%}
+.seat[data-si="5"]{left:5%;top:50%}
+/* heads-up opponent at top */
+.seat[data-si="0"].hu-pos{left:50%;top:8%}
+@media(max-width:620px){.seat{width:80px}}
+
+.my-seat{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.6);border:1.5px solid rgba(200,150,12,.4);border-radius:16px;padding:10px 16px;white-space:nowrap;flex-shrink:0}
+
+/* seat components */
+.av{width:48px;height:48px;border-radius:50%;border:2.5px solid rgba(255,255,255,.22);background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;transition:border-color .2s,box-shadow .2s;flex-shrink:0}
+.av.myturn{border-color:var(--gold)!important;box-shadow:0 0 14px rgba(240,192,96,.75)!important}
+.av.folded{opacity:.22;filter:grayscale(1)}
+.av.iswinner{border-color:#44dd88!important;box-shadow:0 0 16px rgba(68,221,136,.8)!important}
+.dchip{position:absolute;top:-5px;right:-5px;width:19px;height:19px;border-radius:50%;background:var(--gold);color:#000;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:3}
+.sinfo{display:flex;flex-direction:column;align-items:center;gap:1px}
+.sname{font-size:11px;font-weight:700;background:rgba(0,0,0,.75);padding:2px 7px;border-radius:5px;white-space:nowrap;max-width:96px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.sname.me{color:#66ffaa}
+.sstack{font-size:12px;color:var(--gold);font-weight:700}
+.saction{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;white-space:nowrap;letter-spacing:.3px}
+.call-lbl{background:#1a6030;color:#aaffaa;border:1px solid #2a9040}
+.raise-lbl{background:#7a4a08;color:#ffe080;border:1px solid var(--gold2)}
+.fold-lbl{background:#4a1010;color:#ffaaaa;border:1px solid #772222}
+.check-lbl{background:#103050;color:#aad8ff;border:1px solid #1c5080}
+.allin-lbl{background:#8a1008;color:#ffd0d0;border:1px solid #cc2200}
+.blind-lbl{background:#303010;color:#ffe080;border:1px solid #706010}
+.sbet{font-size:10px;color:#fff;background:rgba(0,0,0,.7);border:1px solid var(--gold2);border-radius:5px;padding:1px 6px;white-space:nowrap;margin-top:1px}
+.sallin{font-size:9px;color:#ff7744;font-weight:800}
+.opp-cards{display:flex;gap:3px;margin-bottom:3px}
+.my-sinfo{display:flex;flex-direction:column;gap:2px}
+.my-name{font-size:13px;font-weight:800;color:#66ffaa}
+.my-stack{font-size:12px;color:var(--gold)}
+.my-bet{font-size:11px;color:#fff;background:rgba(0,0,0,.6);border:1px solid var(--gold2);border-radius:5px;padding:1px 7px}
+.my-allin{font-size:10px;color:#ff7744;font-weight:800}
+.my-cards-row{display:flex;flex-direction:row;gap:8px;align-items:center}
+.my-rank{font-size:11px;font-weight:800;color:var(--gold);background:rgba(240,192,96,.12);border:1px solid rgba(240,192,96,.35);padding:3px 10px;border-radius:8px}
+
+/* ═══ CARDS ═══ */
+.card{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;background:#fff;border:1px solid #ddd;font-weight:800;line-height:1.1;box-shadow:0 3px 8px rgba(0,0,0,.5);flex-shrink:0}
+.card.red{color:#cc1111}.card.blk{color:#111}
+.card.back{background:linear-gradient(145deg,#1a3a9a,#0a1860)!important;border-color:#2a4aaa!important}
+.card.back .cr,.card.back .cs{display:none}
+.card.back::after{content:'♦';font-size:20px;color:rgba(255,255,255,.12)}
+.card.ghost{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);box-shadow:none}
+.card.ghost .cr,.card.ghost .cs,.card.ghost::after{display:none}
+.card.sm{width:26px;height:38px;border-radius:4px}
+.card.sm .cr{font-size:10px}.card.sm .cs{font-size:9px}
+.card.sm.back::after{font-size:14px}
+.card.md{width:50px;height:70px}
+.card.md .cr{font-size:19px}.card.md .cs{font-size:14px}
+.card.md.ghost{width:50px;height:70px}
+.card.md.back::after{font-size:26px}
+.card.lg{width:64px;height:90px;border-radius:8px}
+.card.lg .cr{font-size:26px}.card.lg .cs{font-size:18px}
+.card.lg.back::after{font-size:34px}
+
+/* ═══ CHAT ═══ */
+.chat{width:210px;flex-shrink:0;background:rgba(0,0,0,.65);border-left:1px solid rgba(200,150,12,.25);display:flex;flex-direction:column}
+.chat-hdr{flex-shrink:0;padding:9px 11px;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;font-weight:700;color:var(--gold);display:flex;align-items:center}
+.chat-msgs{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px;min-height:0}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(200,150,12,.3);border-radius:3px}
+.cm{font-size:11px;line-height:1.45}
+.cm .cn{font-weight:700;color:var(--gold)}
+.cm .cn.me{color:#66ffaa}
+.cm .ct{color:rgba(255,255,255,.78)}
+.cm.sys{color:rgba(255,255,255,.38);font-style:italic;font-size:10px}
+.chat-row{flex-shrink:0;display:flex;gap:4px;padding:7px 8px;border-top:1px solid rgba(255,255,255,.07)}
+.chat-inp{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:7px;color:#fff;padding:6px 8px;font-size:11px}
+.chat-inp:focus{outline:none;border-color:var(--gold2)}
+.chat-send{background:var(--gold2);border:none;color:#000;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700}
+
+/* ═══ ACTIONS BAR ═══ */
+.abar{flex-shrink:0;background:rgba(0,0,0,.93);border-top:2px solid #b8760a;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.rsec{display:none;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.04);border:1px solid rgba(240,192,96,.2);border-radius:10px;padding:8px 10px}
+.rsec.on{display:flex}
+.rrow{display:flex;align-items:center;gap:8px}
+.rval{font-size:22px;font-weight:800;color:var(--gold);background:rgba(0,0,0,.45);border:2px solid var(--gold2);border-radius:9px;padding:3px 14px;min-width:95px;text-align:center}
+.spin{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.spin:hover{background:rgba(255,255,255,.18)}
+.rslider{width:100%;max-width:360px;accent-color:var(--gold);cursor:pointer}
+.qrow{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.qb{padding:4px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid rgba(240,192,96,.3);background:rgba(240,192,96,.08);color:var(--gold);transition:background .15s}
+.qb:hover{background:rgba(240,192,96,.22)}
+.brow{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;width:100%}
+.ab{padding:12px 0;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;border:none;transition:all .13s;min-width:80px;flex:1;max-width:160px}
+.ab:active{transform:scale(.95)}
+.btn-fold{background:#4a1010;color:#ffb3b3;border:1px solid #772222}.btn-fold:hover{background:#6a1818}
+.btn-chk{background:#0f2840;color:#b3d8ff;border:1px solid #1c4a70}.btn-chk:hover{background:#1a3858}
+.btn-call{background:#0f3020;color:#b3ffcc;border:1px solid #1c5535}.btn-call:hover{background:#1a4830}
+.btn-allin{background:linear-gradient(135deg,#6a1008,#bb2200);color:#ffd0d0;border:1px solid #dd3300}.btn-allin:hover{filter:brightness(1.18)}
+.btn-confirm{background:linear-gradient(135deg,#1a5820,#2a8830);color:#ccffcc;border:1px solid #44aa44}.btn-confirm:hover{filter:brightness(1.18)}
+.btn-cancel{background:#2a1a1a;color:#ffaaaa;border:1px solid #553333;max-width:60px}
+.aarea{display:none}.aarea.on{display:flex;flex-direction:column;gap:6px}
+.wmsg{text-align:center;font-size:12px;color:rgba(255,255,255,.28);padding:2px 0}
+
+/* ═══ ROOM DRAWER ═══ */
+.drawer-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);display:none}
+.drawer-overlay.on{display:block}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:#0d1b2a;border-right:2px solid var(--gold2);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .25s ease;z-index:201}
+.drawer.open{transform:translateX(0)}
+.drawer-hdr{flex-shrink:0;padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.drawer-hdr span{color:var(--gold);font-size:15px;font-weight:800}
+.drawer-close{background:none;border:none;color:rgba(255,255,255,.4);font-size:20px;cursor:pointer;padding:0 4px}
+.drawer-close:hover{color:#fff}
+.drawer-body{flex:1;overflow-y:auto;padding:10px}
+.drawer-section{margin-bottom:14px}
+.drawer-section h4{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding:0 2px}
+.drawer-room{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.drawer-room:hover{background:rgba(200,150,12,.1);border-color:rgba(200,150,12,.2)}
+.drawer-room.current{background:rgba(200,150,12,.15);border-color:var(--gold2)}
+.dr-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.dr-info{flex:1;min-width:0}
+.dr-name{font-size:13px;font-weight:700;color:#f5f0e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr-blinds{font-size:10px;color:rgba(255,255,255,.4)}
+.drawer-lb{padding:8px 2px}
+.drawer-lb-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.dlb-rank{font-size:11px;font-weight:800;width:22px;color:rgba(255,255,255,.4)}
+.dlb-rank.g{color:var(--gold)}.dlb-rank.s{color:#ccc}.dlb-rank.b{color:#c87533}
+.dlb-av{font-size:16px}
+.dlb-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlb-chips{font-size:11px;color:var(--gold);font-weight:700}
+
+/* ═══ TOASTS ═══ */
+.win-toast{position:fixed;top:54px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.93);border:2px solid var(--gold);border-radius:14px;padding:9px 22px;text-align:center;z-index:500;box-shadow:0 4px 24px rgba(240,192,96,.35);animation:wslide .3s ease;white-space:nowrap}
+@keyframes wslide{from{opacity:0;top:42px}to{opacity:1;top:54px}}
+.wt1{color:var(--gold);font-size:14px;font-weight:800;margin-bottom:2px}
+.wt2{color:rgba(255,255,255,.55);font-size:11px}
+.toastm{position:fixed;top:54px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.88);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:7px 16px;color:rgba(255,255,255,.75);font-size:12px;z-index:200;pointer-events:none;animation:wslide .2s ease}
+
+@media(max-width:620px){
+  .chat{display:none}
+  .av{width:38px;height:38px;font-size:19px}
+  .sstack{font-size:11px}
+  .card.md{width:40px;height:56px}
+  .card.md .cr{font-size:15px}
+  .card.lg{width:52px;height:74px}
+  .card.lg .cr{font-size:21px}
+  .ab{padding:10px 0;font-size:13px}
+  .rval{font-size:18px;min-width:76px}
+}
+@media(max-width:380px){
+  .card.lg{width:44px;height:63px}.card.lg .cr{font-size:17px}
+  .ab{font-size:12px}
+}
+
+/* ═══ SIDE PANELS ═══ */
+.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;display:none}
+.panel-overlay.on{display:block}
+.side-panel{position:fixed;right:-340px;top:0;bottom:0;width:320px;background:#0d1b2a;border-left:2px solid #c8960c;z-index:801;transition:right .3s ease;display:flex;flex-direction:column;overflow:hidden}
+.side-panel.open{right:0}
+.sp-hdr{flex-shrink:0;padding:14px 16px;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(200,150,12,.3);display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:800;color:#f0c060}
+.sp-close{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.sp-close:hover{background:rgba(255,255,255,.2);color:#fff}
+.sp-body{flex:1;overflow-y:auto;padding:14px}
+.sp-body::-webkit-scrollbar{width:3px}
+.sp-body::-webkit-scrollbar-thumb{background:rgba(200,150,12,.3);border-radius:3px}
+
+/* Profile stats */
+.prof-av{width:80px;height:80px;border-radius:50%;border:3px solid #c8960c;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 10px}
+.prof-name{text-align:center;font-size:18px;font-weight:800;color:#f0c060;margin-bottom:4px}
+.prof-chips{text-align:center;font-size:14px;color:rgba(255,255,255,.6);margin-bottom:16px}
+.prof-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.stat-box{background:rgba(0,0,0,.4);border:1px solid rgba(200,150,12,.2);border-radius:10px;padding:10px;text-align:center}
+.stat-val{font-size:20px;font-weight:800;color:#f0c060}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,.45);margin-top:2px}
+.stat-box.big{grid-column:1/-1}
+.prof-rank{text-align:center;margin-bottom:16px}
+.rank-badge{display:inline-block;background:linear-gradient(135deg,rgba(200,150,12,.3),rgba(240,192,96,.2));border:1px solid #c8960c;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;color:#f0c060}
+
+/* History */
+.hist-item{background:rgba(0,0,0,.35);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;border-left:3px solid transparent}
+.hist-item.win{border-left-color:#44dd88}
+.hist-item.loss{border-left-color:#dd4444}
+.hist-item.fold{border-left-color:rgba(255,255,255,.2)}
+.hist-icon{font-size:20px;flex-shrink:0}
+.hist-info{flex:1;min-width:0}
+.hist-title{font-size:12px;font-weight:700;color:#f0f0f0}
+.hist-detail{font-size:10px;color:rgba(255,255,255,.45)}
+.hist-chips{font-size:12px;font-weight:700;color:#f0c060;text-align:right;white-space:nowrap}
+.hist-empty{text-align:center;color:rgba(255,255,255,.3);font-size:13px;padding:30px 0}
+
+/* ── Profile & History panel content styles ── */
+.prof-hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;background:rgba(0,0,0,.4);border:1px solid rgba(200,150,12,.2);border-radius:14px;margin-bottom:12px}
+.prof-av-big{width:88px;height:88px;border-radius:50%;border:3px solid #c8960c;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:50px;box-shadow:0 0 24px rgba(200,150,12,.3)}
+.prof-pname{font-size:20px;font-weight:800;color:#f0c060}
+.prof-pchips{font-size:13px;color:rgba(255,255,255,.5)}
+.rank-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(200,150,12,.12);border:1px solid #c8960c;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;color:#f0c060}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-card{background:rgba(0,0,0,.45);border:1px solid rgba(200,150,12,.18);border-radius:12px;padding:12px 10px;text-align:center}
+.stat-card.full{grid-column:1/-1}
+.stat-num{font-size:22px;font-weight:800;color:#f0c060}
+.stat-num.green{color:#44dd88}
+.stat-num.red{color:#ff6666}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.stat-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden}
+.stat-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#1a6830,#44dd88)}
+.sp-action-btn{width:100%;padding:11px;border-radius:10px;border:1px solid rgba(68,221,136,.4);background:rgba(26,88,32,.6);color:#ccffcc;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px}
+.sp-action-btn:hover{background:rgba(42,136,48,.7);border-color:#44aa44}
+.hist-summary{display:flex;justify-content:space-around;padding:12px;background:rgba(0,0,0,.4);border:1px solid rgba(200,150,12,.2);border-radius:12px;margin-bottom:12px}
+.hist-sum-item{text-align:center}
+.hist-sum-val{font-size:20px;font-weight:800;color:#f0c060}
+.hist-sum-lbl{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.3px}
+.hist-list{display:flex;flex-direction:column;gap:6px}
+.hist-row{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.35);border-radius:10px;padding:10px 12px;border-left:3px solid rgba(255,255,255,.1)}
+.hist-row.win{border-left-color:#44dd88}
+.hist-row.loss{border-left-color:#ff4444}
+.hist-icon{font-size:22px;flex-shrink:0;width:28px;text-align:center}
+.hist-info{flex:1;min-width:0}
+.hist-main{font-size:12px;font-weight:700;color:#f0ead8}
+.hist-sub{font-size:10px;color:rgba(255,255,255,.38);margin-top:1px}
+.hist-amount{font-size:12px;font-weight:700;white-space:nowrap}
+.hist-amount.win{color:#44dd88}
+.hist-amount.loss{color:#ff6666}
+.hist-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,.3);font-size:13px;line-height:2}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <div class="lbox-icon">🐒</div>
+    <h2>Poker Chimps</h2>
+    <p>Free Texas Hold'em — no real money<br>Bots &amp; real BritChat players</p>
+    <input id="pname" placeholder="Your name..." maxlength="18" autocomplete="off"
+           onkeydown="if(event.key==='Enter')startGame()">
+    <button class="lbtn" onclick="startGame()">Enter Poker Room →</button>
+    <a href="/index.html" class="back-a">← Back to Lobby</a>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <div class="lobby-hdr">
+    <div class="lobby-logo">🃏 Poker Chimps</div>
+    <div class="lobby-chips">🪙 <span id="lobby-chips">10,000</span></div>
+    <a href="/index.html" style="color:rgba(255,255,255,.35);font-size:11px;text-decoration:none">← Home</a>
+  </div>
+  <div class="lobby-body">
+
+    <!-- PLAYER CHIPS BANNER -->
+    <div style="background:linear-gradient(135deg,rgba(200,150,12,.2),rgba(240,192,96,.08));border:1px solid rgba(200,150,12,.4);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <div style="font-size:40px;line-height:1" id="lobby-av">🎰</div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800;color:#f0c060" id="lobby-uname">Player</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.6)">🪙 <span id="lobby-chips">10,000</span> chips</div>
+        <div style="font-size:11px;color:rgba(200,150,12,.7);margin-top:2px" id="lobby-rank-lbl">🃏 Rookie</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button onclick="openProfile()" style="background:rgba(200,150,12,.15);border:1px solid rgba(200,150,12,.4);color:#f0c060;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">👤 Profile</button>
+        <button onclick="openHistory()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">📜 History</button>
+      </div>
+    </div>
+
+    <!-- HEADS-UP TABLES -->
+    <div class="lobby-section">
+      <h3>⚔️ Heads-Up (1v1)</h3>
+      <div class="room-grid">
+        <div class="room-card hu" onclick="joinRoom('hu_low')">
+          <div class="rc-icon">⚔️</div><div class="rc-name">The Duel</div>
+          <div class="rc-blinds">Blinds 25/50</div><div class="rc-seats">2 players · Casual</div>
+          <div class="rc-buyin">Min: 🪙 1,000</div>
+          <button class="rc-join">Play 1v1 →</button>
+        </div>
+        <div class="room-card hu" onclick="joinRoom('hu_mid')">
+          <div class="rc-icon">🗡️</div><div class="rc-name">Gladiator</div>
+          <div class="rc-blinds">Blinds 50/100</div><div class="rc-seats">2 players · Medium</div>
+          <div class="rc-buyin">Min: 🪙 3,000</div>
+          <button class="rc-join">Play 1v1 →</button>
+        </div>
+        <div class="room-card hu" onclick="joinRoom('hu_high')">
+          <div class="rc-icon">💥</div><div class="rc-name">High Stakes Duel</div>
+          <div class="rc-blinds">Blinds 200/400</div><div class="rc-seats">2 players · High</div>
+          <div class="rc-buyin">Min: 🪙 10,000</div>
+          <button class="rc-join">Play 1v1 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6-PLAYER TABLES -->
+    <div class="lobby-section">
+      <h3>🪑 6-Player Tables</h3>
+      <div class="room-grid">
+        <div class="room-card" onclick="joinRoom('pub')">
+          <div class="rc-icon">🍺</div><div class="rc-name">Pub Night</div>
+          <div class="rc-blinds">Blinds 10/20</div><div class="rc-seats">6 players · Beginner</div>
+          <div class="rc-buyin">Min: 🪙 500</div>
+          <button class="rc-join">Join →</button>
+        </div>
+        <div class="room-card" onclick="joinRoom('crown')">
+          <div class="rc-icon">👑</div><div class="rc-name">The Crown</div>
+          <div class="rc-blinds">Blinds 50/100</div><div class="rc-seats">6 players · Regular</div>
+          <div class="rc-buyin">Min: 🪙 2,000</div>
+          <button class="rc-join">Join →</button>
+        </div>
+        <div class="room-card" onclick="joinRoom('royal')">
+          <div class="rc-icon">🎩</div><div class="rc-name">Royal Flush</div>
+          <div class="rc-blinds">Blinds 100/200</div><div class="rc-seats">6 players · Medium</div>
+          <div class="rc-buyin">Min: 🪙 5,000</div>
+          <button class="rc-join">Join →</button>
+        </div>
+        <div class="room-card" onclick="joinRoom('highroller')">
+          <div class="rc-icon">💎</div><div class="rc-name">High Roller</div>
+          <div class="rc-blinds">Blinds 250/500</div><div class="rc-seats">6 players · High</div>
+          <div class="rc-buyin">Min: 🪙 12,000</div>
+          <button class="rc-join">Join →</button>
+        </div>
+        <div class="room-card" onclick="joinRoom('vip')">
+          <div class="rc-icon">🌟</div><div class="rc-name">VIP Lounge</div>
+          <div class="rc-blinds">Blinds 500/1000</div><div class="rc-seats">6 players · Elite</div>
+          <div class="rc-buyin">Min: 🪙 25,000</div>
+          <button class="rc-join" style="background:linear-gradient(135deg,#5a1060,#9a30a0)">Join VIP →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9-PLAYER / FULL RING -->
+    <div class="lobby-section">
+      <h3>🦈 Full Ring (9 Players)</h3>
+      <div class="room-grid">
+        <div class="room-card" onclick="joinRoom('shark_tank')">
+          <div class="rc-icon">🦈</div><div class="rc-name">Shark Tank</div>
+          <div class="rc-blinds">Blinds 25/50</div><div class="rc-seats">9 players · Full Ring</div>
+          <div class="rc-buyin">Min: 🪙 1,500</div>
+          <button class="rc-join">Dive In →</button>
+        </div>
+        <div class="room-card" onclick="joinRoom('tournament')">
+          <div class="rc-icon">🏆</div><div class="rc-name">Tournament Table</div>
+          <div class="rc-blinds">Blinds 50/100</div><div class="rc-seats">9 players · Competitive</div>
+          <div class="rc-buyin">Min: 🪙 5,000</div>
+          <button class="rc-join" style="background:linear-gradient(135deg,#704808,#c8960c)">Join →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY BONUS -->
+    <div class="lobby-section">
+      <h3>🎁 Daily Bonus</h3>
+      <div style="background:rgba(0,0,0,.4);border:1px solid rgba(68,221,119,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:32px">🎁</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#44dd77;margin-bottom:2px">Claim your daily chips!</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.5)">Free chips every 24 hours — keep your stack topped up</div>
+        </div>
+        <button id="daily-btn" onclick="claimDaily()" style="background:linear-gradient(135deg,#1a5820,#2a8830);border:none;color:#ccffcc;padding:9px 14px;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap">Claim 🪙</button>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="lobby-section">
+      <h3>🏆 Chip Leaders</h3>
+      <div class="lb-list" id="lb-list">
+        <div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px 0">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="hdr">
+    <button class="hdr-menu" onclick="openDrawer()">☰ Rooms</button>
+    <div class="hdr-title" id="hdr-title">Poker Chimps</div>
+    <div class="badge badge-pot">Pot: <span id="hpot">0</span></div>
+    <div class="badge badge-phase" id="hphase">Waiting…</div>
+    <div style="display:flex;gap:4px;flex-shrink:0">
+      <button onclick="openProfile()" style="background:rgba(200,150,12,.15);border:1px solid rgba(200,150,12,.3);color:#f0c060;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700" title="My Profile">👤</button>
+      <button onclick="openHistory()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);padding:5px 9px;border-radius:7px;cursor:pointer;font-size:11px" title="Game History">📜</button>
+
+      <button class="btn-leave" onclick="leaveTable()" title="Back to Lobby">🚪 Leave</button>
+      <button onclick="doLogoutPoker()" style="background:#3a1010;border:1px solid #772222;color:#ffaaaa;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600" title="Logout">⏻</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="tcol" id="tcol">
+      <div class="ptable" id="ptable">
+        <div class="felt" id="felt">
+          <div class="felt-inner"></div>
+          <div class="felt-centre">
+            <div class="comm-row" id="comm"></div>
+            <div class="felt-potlabel" id="feltpot" style="display:none"></div>
+            <div class="felt-status" id="status">Welcome!</div>
+          </div>
+        </div>
+        <div id="seats-container"></div>
+      </div>
+    </div>
+    <div class="chat">
+      <div class="chat-hdr">
+        💬 Table Chat
+        <span id="chat-players" style="font-size:10px;color:rgba(255,255,255,.4);margin-left:auto"></span>
+      </div>
+      <div class="chat-msgs" id="chatmsgs"></div>
+      <div class="chat-quick-row" id="chat-quick-row">
+        <select id="quick-phrase" onchange="sendQuickPhrase(this)" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(200,150,12,.3);border-radius:7px;color:#f0c060;padding:5px 8px;font-size:11px;cursor:pointer">
+          <option value="" disabled selected style="color:#888">⚡ Quick phrase…</option>
+          <optgroup label="Reactions">
+            <option value="Amazing hand! 🤩">Amazing hand! 🤩</option>
+            <option value="Well played! 👏">Well played! 👏</option>
+            <option value="Nice bluff! 😏">Nice bluff! 😏</option>
+            <option value="Good game! 🤝">Good game! 🤝</option>
+            <option value="Lucky hand! 🍀">Lucky hand! 🍀</option>
+            <option value="Unlucky! 😬">Unlucky! 😬</option>
+          </optgroup>
+          <optgroup label="Table Talk">
+            <option value="I&#39;m all in! 🔥">I&apos;m all in! 🔥</option>
+            <option value="Fold em! 🙈">Fold em! 🙈</option>
+            <option value="Show your cards! 👀">Show your cards! 👀</option>
+            <option value="Are you bluffing? 🤔">Are you bluffing? 🤔</option>
+            <option value="On tilt! 😤">On tilt! 😤</option>
+            <option value="Poker face 😐">Poker face 😐</option>
+          </optgroup>
+          <optgroup label="Fun">
+            <option value="🐒 Chimp power!">🐒 Chimp power!</option>
+            <option value="♠️ ♥️ ♦️ ♣️">♠️ ♥️ ♦️ ♣️</option>
+            <option value="🃏 Deal me in!">🃏 Deal me in!</option>
+            <option value="🏆 I&#39;m the best!">🏆 I&apos;m the best!</option>
+            <option value="💎 Diamond hands!">💎 Diamond hands!</option>
+            <option value="Ha ha! 😂">Ha ha! 😂</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="chat-row">
+        <input class="chat-inp" id="chatinp" placeholder="Chat with players…" maxlength="100"
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" onclick="sendChat()">→</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="abar">
+    <div class="rsec" id="rpanel">
+      <div class="rrow">
+        <button class="spin" onclick="nudge(-1)">−</button>
+        <div class="rval" id="rval">200</div>
+        <button class="spin" onclick="nudge(1)">+</button>
+      </div>
+      <input type="range" class="rslider" id="rslider" min="100" max="10000" oninput="sliderMove(this.value)">
+      <div class="qrow">
+        <button class="qb" onclick="qbet('min')">Min</button>
+        <button class="qb" onclick="qbet('third')">⅓ Pot</button>
+        <button class="qb" onclick="qbet('half')">½ Pot</button>
+        <button class="qb" onclick="qbet('pot')">Pot</button>
+        <button class="qb" onclick="qbet('2x')">2× Pot</button>
+        <button class="qb" onclick="qbet('max')">Max</button>
+      </div>
+      <div class="brow">
+        <button class="ab btn-confirm" onclick="confirmRaise()">✓ Raise to <span id="rconfirm">200</span></button>
+        <button class="ab btn-cancel" onclick="closeRaise()">✕</button>
+      </div>
+    </div>
+    <div class="aarea" id="actarea">
+      <div class="brow">
+        <button class="ab btn-fold" onclick="pact('fold')">Fold</button>
+        <button class="ab btn-chk" id="bchk">Check</button>
+        <button class="ab btn-call" id="bcall">Call</button>
+        <button class="ab btn-allin" onclick="pact('allin')">All-In 🔥</button>
+      </div>
+    </div>
+    <div class="wmsg" id="waitmsg">Setting up table…</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:3px 0">
+      <span id="sitout-label" style="font-size:11px;color:rgba(255,255,255,.35)">Sitting in</span>
+      <button onclick="toggleSitOut()" id="sitout-txt-btn" style="background:transparent;border:1px solid rgba(255,170,0,.4);color:#ffaa00;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">Sit Out Next Hand</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROOM DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-hdr">
+    <span>🃏 Poker Rooms</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div style="padding:8px 10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+    <button onclick="leaveTable()" style="width:100%;padding:8px;background:rgba(200,150,12,.12);border:1px solid rgba(200,150,12,.3);color:#f0c060;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:8px">🏠 Back to Lobby</button>
+    <button onclick="doLogoutPoker()" style="width:100%;padding:8px;background:#3a1010;border:1px solid #772222;color:#ffaaaa;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:8px">⏻ Logout</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <h4>⚔️ Heads-Up</h4>
+      <div class="drawer-room menu-room" onclick="switchRoom('hu_low')"><div class="dr-icon">⚔️</div><div class="dr-info"><div class="dr-name">The Duel</div><div class="dr-blinds">25/50 · Casual</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('hu_mid')"><div class="dr-icon">🗡️</div><div class="dr-info"><div class="dr-name">Gladiator</div><div class="dr-blinds">50/100 · Medium</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('hu_high')"><div class="dr-icon">💥</div><div class="dr-info"><div class="dr-name">High Stakes Duel</div><div class="dr-blinds">200/400 · High</div></div></div>
+    </div>
+    <div class="drawer-section">
+      <h4>🪑 6-Player</h4>
+      <div class="drawer-room menu-room" onclick="switchRoom('pub')"><div class="dr-icon">🍺</div><div class="dr-info"><div class="dr-name">Pub Night</div><div class="dr-blinds">10/20 · Beginner</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('crown')"><div class="dr-icon">👑</div><div class="dr-info"><div class="dr-name">The Crown</div><div class="dr-blinds">50/100 · Regular</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('royal')"><div class="dr-icon">🎩</div><div class="dr-info"><div class="dr-name">Royal Flush</div><div class="dr-blinds">100/200 · Medium</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('highroller')"><div class="dr-icon">💎</div><div class="dr-info"><div class="dr-name">High Roller</div><div class="dr-blinds">250/500 · High</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('vip')"><div class="dr-icon">🌟</div><div class="dr-info"><div class="dr-name">VIP Lounge</div><div class="dr-blinds">500/1000 · Elite</div></div></div>
+    </div>
+    <div class="drawer-section">
+      <h4>🦈 Full Ring 9-Player</h4>
+      <div class="drawer-room menu-room" onclick="switchRoom('shark_tank')"><div class="dr-icon">🦈</div><div class="dr-info"><div class="dr-name">Shark Tank</div><div class="dr-blinds">25/50 · Full Ring</div></div></div>
+      <div class="drawer-room menu-room" onclick="switchRoom('tournament')"><div class="dr-icon">🏆</div><div class="dr-info"><div class="dr-name">Tournament Table</div><div class="dr-blinds">50/100 · Competitive</div></div></div>
+    </div>
+    <div class="drawer-section">
+      <h4>🏆 Chip Leaders</h4>
+      <div class="drawer-lb" id="drawer-lb">Loading…</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+
+'use strict';
+const FB_URL='https://britchat-6faa5-default-rtdb.firebaseio.com';
+
+/* ═══ ROOM CONFIGS ═══ */
+const ROOMS={
+  // Heads-Up
+  hu_low:    {id:'hu_low',    name:'The Duel',         icon:'⚔️',  sb:25,  bb:50,  seats:2, huMode:true,  minBuy:1000,  desc:'Low stakes 1v1'},
+  hu_mid:    {id:'hu_mid',    name:'Gladiator',         icon:'🗡️', sb:50,  bb:100, seats:2, huMode:true,  minBuy:3000,  desc:'Medium stakes 1v1'},
+  hu_high:   {id:'hu_high',   name:'High Stakes Duel',  icon:'💥',  sb:200, bb:400, seats:2, huMode:true,  minBuy:10000, desc:'High stakes 1v1'},
+  // 6-Player
+  pub:       {id:'pub',       name:'Pub Night',          icon:'🍺',  sb:10,  bb:20,  seats:6, huMode:false, minBuy:500,   desc:'Friendly & casual'},
+  crown:     {id:'crown',     name:'The Crown',          icon:'👑',  sb:50,  bb:100, seats:6, huMode:false, minBuy:2000,  desc:'Regular stakes'},
+  royal:     {id:'royal',     name:'Royal Flush',        icon:'🎩',  sb:100, bb:200, seats:6, huMode:false, minBuy:5000,  desc:'Medium stakes'},
+  highroller:{id:'highroller',name:'High Roller',        icon:'💎',  sb:250, bb:500, seats:6, huMode:false, minBuy:12000, desc:'High stakes'},
+  vip:       {id:'vip',       name:'VIP Lounge',         icon:'🌟',  sb:500, bb:1000,seats:6, huMode:false, minBuy:25000, desc:'Elite players only'},
+  // 9-Player
+  shark_tank:{id:'shark_tank',name:'Shark Tank',         icon:'🦈',  sb:25,  bb:50,  seats:9, huMode:false, minBuy:1500,  desc:'Full ring 9-player'},
+  tournament:{id:'tournament',name:'Tournament Table',   icon:'🏆',  sb:50,  bb:100, seats:9, huMode:false, minBuy:5000,  desc:'Tournament style'},
+};
+let currentRoom=null;
+
+/* ═══ DECK ═══ */
+const SUITS=['♠','♥','♦','♣'],RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const RV={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,J:11,Q:12,K:13,A:14};
+const mkDeck=()=>{const d=[];for(const s of SUITS)for(const r of RANKS)d.push({r,s});return shuf(d)};
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const red=c=>c.s==='♥'||c.s==='♦';
+
+/* ═══ HAND EVAL ═══ */
+function evalHand(hole,board){
+  const pool=[...hole,...board].filter(Boolean);
+  if(pool.length<2)return{name:'',score:0};
+  if(pool.length<5)return{name:'High Card',score:hcs(pool)};
+  const cs=c5(pool);let b={name:'',score:-1};
+  for(const c of cs){const h=s5(c);if(h.score>b.score)b=h}
+  return b;
+}
+const hcs=cs=>cs.map(c=>RV[c.r]).sort((a,b)=>b-a).reduce((s,v,i)=>s+v*Math.pow(15,4-i),0);
+function c5(a){const r=[];(function g(s,c){if(c.length===5){r.push(c);return}for(let i=s;i<a.length;i++)g(i+1,[...c,a[i]])})(0,[]);return r}
+function s5(cs){
+  const vs=cs.map(c=>RV[c.r]).sort((a,b)=>b-a);
+  const ss=cs.map(c=>c.s);
+  const fl=ss.every(s=>s===ss[0]);
+  const st=vs[0]-vs[4]===4&&new Set(vs).size===5;
+  const wh=vs[0]===14&&JSON.stringify(vs.slice(1))==='[5,4,3,2]';
+  const cnt={};vs.forEach(v=>cnt[v]=(cnt[v]||0)+1);
+  const fq=Object.values(cnt).sort((a,b)=>b-a);
+  const tb=Object.entries(cnt).sort((a,b)=>b[1]-a[1]||b[0]-a[0]).map(([v,c])=>+v*100+c).reduce((s,v,i)=>s+v*Math.pow(1e4,4-i),0);
+  let rank,name;
+  if((st||wh)&&fl){rank=8;name='Straight Flush'}
+  else if(fq[0]===4){rank=7;name='Four of a Kind'}
+  else if(fq[0]===3&&fq[1]===2){rank=6;name='Full House'}
+  else if(fl){rank=5;name='Flush'}
+  else if(st||wh){rank=4;name='Straight'}
+  else if(fq[0]===3){rank=3;name='Three of a Kind'}
+  else if(fq[0]===2&&fq[1]===2){rank=2;name='Two Pair'}
+  else if(fq[0]===2){rank=1;name='One Pair'}
+  else{rank=0;name='High Card'}
+  return{rank,name,score:rank*1e15+tb};
+}
+
+/* ═══ BOTS ═══ */
+const BN=['Alfie','Bessie','Charlie','Dot','Eddie','Flo','George','Harry','Iris','Jack','Karen','Leo'];
+const BA=['🤠','😎','🧐','👑','🦊','🐻','🎩','💎','🌟','🎭','😏','🃏'];
+
+/* ═══ STATE ═══ */
+let ME={name:'',av:'🎰',chips:10000};
+let PROFILE={wins:0,losses:0,handsPlayed:0,biggestWin:0,totalWon:0,history:[]};
+
+function saveChips(){
+  // Save locally (fast, offline)
+  localStorage.setItem('pk_'+ME.name,ME.chips);
+  // Save to Firebase (persists across devices, sessions, months)
+  try{
+    const key=encodeURIComponent(ME.name.replace(/[.#$/\[\]]/g,'_'));
+    fetch(FB_URL+'/poker_chips/'+key+'.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:ME.name,av:ME.av,chips:ME.chips,ts:Date.now()})
+    });
+  }catch(e){}
+}
+
+function loadProfile(){
+  try{
+    const saved=localStorage.getItem('pk_profile_'+ME.name);
+    if(saved)PROFILE=JSON.parse(saved);
+  }catch(e){}
+}
+
+function saveProfile(){
+  try{
+    localStorage.setItem('pk_profile_'+ME.name,JSON.stringify(PROFILE));
+  }catch(e){}
+}
+
+function addHistory(hand,chips){
+  // Called at end of each hand
+}
+
+function recordWin(pot,reason){
+  PROFILE.wins++;PROFILE.handsPlayed++;
+  PROFILE.totalWon+=pot;
+  if(pot>PROFILE.biggestWin)PROFILE.biggestWin=pot;
+  PROFILE.history.unshift({type:'win',pot,chips:ME.chips,reason:reason||'',ts:Date.now()});
+  if(PROFILE.history.length>60)PROFILE.history=PROFILE.history.slice(0,60);
+  saveProfile();
+}
+
+function recordLoss(){
+  PROFILE.losses++;PROFILE.handsPlayed++;
+  PROFILE.history.unshift({type:'loss',chips:ME.chips,ts:Date.now()});
+  if(PROFILE.history.length>50)PROFILE.history=PROFILE.history.slice(0,50);
+  saveProfile();
+}
+let G=null;
+let MY=-1; // player's seat index
+let NSEATS=6;
+let betAmt=200;
+let busy=false;
+let ttimer=null;
+let chatLog=[];
+let seatAction={};
+
+/* ═══ ENTRY ═══ */
+// SVG avatar definitions embedded directly (no localStorage dependency)
+window.POKER_SVG_AVATARS = [
+  // Sunglasses cool guy
+  {id:'cool',label:'Cool Cat',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="28" fill="#f4a460"/><ellipse cx="30" cy="26" rx="14" ry="13" fill="#e8935a"/><circle cx="30" cy="44" r="10" fill="#e8935a"/><rect x="14" y="22" width="13" height="7" rx="3" fill="#111"/><rect x="33" y="22" width="13" height="7" rx="3" fill="#111"/><rect x="27" y="25" width="6" height="2" rx="1" fill="#333"/><path d="M22 38 Q30 44 38 38" stroke="#8B4513" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="8" y="4" width="44" height="14" rx="7" fill="#8B0000"/><rect x="10" y="8" width="40" height="6" rx="3" fill="#cc0000"/></svg>`},
+  // Top hat gentleman
+  {id:'tophad',label:'The Don',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="34" r="22" fill="#ffe0bd"/><ellipse cx="30" cy="31" rx="13" ry="12" fill="#ffcba4"/><circle cx="30" cy="48" r="9" fill="#ffcba4"/><circle cx="24" cy="29" r="2.5" fill="#3d2b1f"/><circle cx="36" cy="29" r="2.5" fill="#3d2b1f"/><path d="M24 38 Q30 43 36 38" stroke="#c0392b" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="16" y="4" width="28" height="20" rx="2" fill="#111"/><rect x="10" y="23" width="40" height="5" rx="2" fill="#222"/><rect x="26" y="34" width="8" height="3" rx="1" fill="#ccc"/></svg>`},
+  // Cowboy
+  {id:'cowboy',label:'The Sheriff',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="35" r="21" fill="#f5deb3"/><ellipse cx="30" cy="32" rx="12" ry="11" fill="#e8c99a"/><circle cx="30" cy="47" r="8" fill="#e8c99a"/><circle cx="24" cy="30" r="2.5" fill="#2c1810"/><circle cx="36" cy="30" r="2.5" fill="#2c1810"/><path d="M24 38 Q30 43 36 38" stroke="#8B4513" stroke-width="2" fill="none"/><path d="M5 22 Q15 12 30 14 Q45 12 55 22 L50 26 Q40 18 30 20 Q20 18 10 26 Z" fill="#8B4513"/><ellipse cx="30" cy="14" rx="10" ry="8" fill="#6b3410"/><path d="M18 26 Q30 30 42 26" stroke="#8B4513" stroke-width="3" fill="none"/></svg>`},
+  // Chimp poker player
+  {id:'chimp1',label:'Banana Bluff',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="26" fill="#8B6914"/><circle cx="18" cy="22" r="8" fill="#7a5c10"/><circle cx="42" cy="22" r="8" fill="#7a5c10"/><ellipse cx="30" cy="32" rx="16" ry="14" fill="#c8962a"/><ellipse cx="30" cy="38" rx="10" ry="7" fill="#e8b84a"/><circle cx="24" cy="28" r="3" fill="#1a0a00"/><circle cx="36" cy="28" r="3" fill="#1a0a00"/><circle cx="25" cy="27" r="1" fill="#fff"/><circle cx="37" cy="27" r="1" fill="#fff"/><path d="M22 37 Q30 43 38 37" stroke="#5a3a00" stroke-width="2" fill="none"/><ellipse cx="27" cy="34" rx="2" ry="1.5" fill="#5a3a00"/><ellipse cx="33" cy="34" rx="2" ry="1.5" fill="#5a3a00"/></svg>`},
+  // Chimp with sunglasses
+  {id:'chimp2',label:'Cool Chimp',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="26" fill="#7a5c10"/><circle cx="17" cy="21" r="8" fill="#6a4c0a"/><circle cx="43" cy="21" r="8" fill="#6a4c0a"/><ellipse cx="30" cy="32" rx="16" ry="14" fill="#b8861a"/><ellipse cx="30" cy="39" rx="10" ry="7" fill="#d8a83a"/><rect x="16" y="25" width="12" height="7" rx="3" fill="#111"/><rect x="32" y="25" width="12" height="7" rx="3" fill="#111"/><rect x="28" y="28" width="4" height="2" rx="1" fill="#333"/><path d="M22 38 Q30 44 38 38" stroke="#4a2c00" stroke-width="2" fill="none"/><ellipse cx="27" cy="35" rx="2" ry="1.5" fill="#4a2c00"/><ellipse cx="33" cy="35" rx="2" ry="1.5" fill="#4a2c00"/></svg>`},
+  // Poker ace lady
+  {id:'lady',label:'Lady Luck',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="32" r="22" fill="#ffd6b5"/><ellipse cx="30" cy="29" rx="13" ry="12" fill="#ffcba4"/><circle cx="30" cy="45" r="9" fill="#ffcba4"/><circle cx="23" cy="27" r="2.5" fill="#2d1b2e"/><circle cx="37" cy="27" r="2.5" fill="#2d1b2e"/><path d="M23 37 Q30 42 37 37" stroke="#e74c8c" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M10 18 Q20 8 30 10 Q40 8 50 18 Q45 6 30 4 Q15 6 10 18Z" fill="#cc2266"/><path d="M12 20 Q30 14 48 20 Q40 12 30 14 Q20 12 12 20Z" fill="#ff4499"/><circle cx="26" cy="22" r="1.5" fill="#e8b4d0"/><circle cx="34" cy="22" r="1.5" fill="#e8b4d0"/></svg>`},
+  // Grumpy old pro
+  {id:'grumpy',label:'Old Pro',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="32" r="22" fill="#e8c49a"/><ellipse cx="30" cy="29" rx="13" ry="12" fill="#d4a87a"/><circle cx="30" cy="45" r="9" fill="#d4a87a"/><circle cx="23" cy="27" r="2.5" fill="#1a1a1a"/><circle cx="37" cy="27" r="2.5" fill="#1a1a1a"/><path d="M22 22 L26 25" stroke="#8B7355" stroke-width="2"/><path d="M34 25 L38 22" stroke="#8B7355" stroke-width="2"/><path d="M22 38 Q30 35 38 38" stroke="#5a3a20" stroke-width="2" fill="none"/><ellipse cx="26" cy="35" rx="4" ry="2" fill="#c4a070"/><ellipse cx="34" cy="35" rx="4" ry="2" fill="#c4a070"/><rect x="8" y="6" width="44" height="14" rx="7" fill="#888"/><rect x="10" y="10" width="40" height="6" rx="3" fill="#aaa"/></svg>`},
+  // Big bluffer
+  {id:'bluffer',label:'The Bluffer',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="32" r="22" fill="#f4c896"/><ellipse cx="30" cy="30" rx="15" ry="14" fill="#e8a870"/><circle cx="30" cy="47" r="10" fill="#e8a870"/><circle cx="22" cy="27" r="3" fill="#1a0e08"/><circle cx="38" cy="27" r="3" fill="#1a0e08"/><circle cx="23" cy="26" r="1" fill="#fff"/><circle cx="39" cy="26" r="1" fill="#fff"/><path d="M24 22 Q30 19 36 22" stroke="#8B6040" stroke-width="1.5" fill="none"/><path d="M22 37 Q30 45 38 37" stroke="#c0392b" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="36" rx="4" ry="2.5" fill="#f4a0a0" opacity="0.6"/><ellipse cx="36" cy="36" rx="4" ry="2.5" fill="#f4a0a0" opacity="0.6"/></svg>`},
+  // Chimp boss
+  {id:'chimp3',label:'Boss Chimp',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="26" fill="#6B4C10"/><circle cx="16" cy="22" r="9" fill="#5a3e08"/><circle cx="44" cy="22" r="9" fill="#5a3e08"/><ellipse cx="30" cy="33" rx="17" ry="15" fill="#a87020"/><ellipse cx="30" cy="40" rx="11" ry="8" fill="#c8902a"/><circle cx="23" cy="28" r="3.5" fill="#0a0500"/><circle cx="37" cy="28" r="3.5" fill="#0a0500"/><circle cx="24" cy="27" r="1.2" fill="#fff"/><circle cx="38" cy="27" r="1.2" fill="#fff"/><path d="M23 39 Q30 45 37 39" stroke="#3a2000" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="27" cy="36" rx="2.5" ry="2" fill="#3a2000"/><ellipse cx="33" cy="36" rx="2.5" ry="2" fill="#3a2000"/><rect x="16" y="2" width="28" height="18" rx="2" fill="#1a1a1a"/><rect x="12" y="18" width="36" height="5" rx="2" fill="#2a2a2a"/></svg>`},
+  // Nervous newbie
+  {id:'newbie',label:'The Rookie',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="32" r="22" fill="#ffe8c8"/><ellipse cx="30" cy="29" rx="13" ry="12" fill="#ffd4a8"/><circle cx="30" cy="46" r="9" fill="#ffd4a8"/><circle cx="23" cy="27" r="2.5" fill="#1a1a2e"/><circle cx="37" cy="27" r="2.5" fill="#1a1a2e"/><circle cx="24" cy="26" r="1" fill="#fff"/><circle cx="38" cy="26" r="1" fill="#fff"/><path d="M24 38 Q30 36 36 38" stroke="#8B5030" stroke-width="2" fill="none"/><path d="M22 20 Q24 17 26 20" stroke="#8B5030" stroke-width="1.5" fill="none"/><path d="M34 20 Q36 17 38 20" stroke="#8B5030" stroke-width="1.5" fill="none"/><ellipse cx="23" cy="34" rx="3" ry="2" fill="#f4a0a0" opacity="0.7"/><ellipse cx="37" cy="34" rx="3" ry="2" fill="#f4a0a0" opacity="0.7"/></svg>`},
+  // Villain
+  {id:'villain',label:'The Villain',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="32" r="22" fill="#2d1b2e"/><ellipse cx="30" cy="29" rx="13" ry="12" fill="#3d2b3e"/><circle cx="30" cy="45" r="9" fill="#3d2b3e"/><circle cx="23" cy="27" r="2.5" fill="#cc0000"/><circle cx="37" cy="27" r="2.5" fill="#cc0000"/><path d="M26 22 L22 19" stroke="#cc8800" stroke-width="2"/><path d="M34 22 L38 19" stroke="#cc8800" stroke-width="2"/><path d="M23 39 Q30 36 37 39" stroke="#cc0000" stroke-width="2" fill="none"/><ellipse cx="30" cy="36" rx="5" ry="3" fill="#4a2050"/><path d="M26 35 L30 38 L34 35" stroke="#cc0000" stroke-width="1" fill="#cc0000" opacity="0.7"/></svg>`},
+  // Chimp in hoodie
+  {id:'chimp4',label:'Hoodie Chimp',svg:`<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="26" fill="#4a4a5a"/><circle cx="30" cy="26" r="18" fill="#5a3a10"/><circle cx="16" cy="20" r="8" fill="#4a2e08"/><circle cx="44" cy="20" r="8" fill="#4a2e08"/><ellipse cx="30" cy="28" rx="14" ry="13" fill="#9a6818"/><ellipse cx="30" cy="35" rx="9" ry="7" fill="#b8882a"/><circle cx="24" cy="25" r="3" fill="#0a0500"/><circle cx="36" cy="25" r="3" fill="#0a0500"/><circle cx="25" cy="24" r="1" fill="#fff"/><circle cx="37" cy="24" r="1" fill="#fff"/><path d="M23 34 Q30 40 37 34" stroke="#2a1800" stroke-width="2.5" fill="none"/><ellipse cx="27" cy="31" rx="2" ry="1.5" fill="#2a1800"/><ellipse cx="33" cy="31" rx="2" ry="1.5" fill="#2a1800"/></svg>`},
+];
+
+window.onload=()=>{
+  try{
+    const u=localStorage.getItem('nt_session');
+    if(u){
+      const users=JSON.parse(localStorage.getItem('nt_users')||'{}');
+      if(users[u]){ME.name=users[u].name||users[u].username||u;ME.av=users[u].avatar||'🎰';
+        ME.chips=+localStorage.getItem('pk_'+ME.name)||10000;
+        // Try to load chips from Firebase (more up-to-date across devices)
+        const fbKey=encodeURIComponent(ME.name.replace(/[.#$/\[\]]/g,'_'));
+        fetch(FB_URL+'/poker_chips/'+fbKey+'.json')
+          .then(r=>r.json())
+          .then(d=>{if(d&&d.chips&&d.chips>0){ME.chips=d.chips;localStorage.setItem('pk_'+ME.name,ME.chips);}})
+          .catch(()=>{})
+          .finally(()=>{showLobby();});
+        return}
+    }
+  }catch(e){}
+  document.getElementById('pname').focus();
+};
+
+function startGame(){
+  const n=document.getElementById('pname').value.trim();
+  if(!n||n.length<2){alert('Enter a name!');return}
+  ME.name=n;ME.chips=+localStorage.getItem('pk_'+ME.name)||10000;
+  showLobby();
+}
+
+/* ═══ LOBBY ═══ */
+function showLobby(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('game').classList.remove('on');
+  document.getElementById('lobby').classList.add('on');
+  // Populate banner
+  const safe = id => document.getElementById(id);
+  if(safe('lobby-chips')) safe('lobby-chips').textContent=ME.chips.toLocaleString();
+  if(safe('lobby-uname')) safe('lobby-uname').textContent=ME.name||'Player';
+  const lavEl=safe('lobby-av');
+  if(lavEl){lavEl.innerHTML='';const avHtml=renderAvHtml(ME.av||'🎰',48);if(avHtml.startsWith('<')){ lavEl.innerHTML=avHtml;}else{lavEl.textContent=avHtml;}}
+  if(safe('lobby-rank-lbl')){const r=typeof getRank==='function'?getRank(ME.chips):{emoji:'🃏',name:'Rookie'};safe('lobby-rank-lbl').textContent=r.emoji+' '+r.name;}
+  loadLeaderboard();
+  checkDailyBonus();
+  stopGame();
+}
+function goLobby(){closeMenu();showLobby()}
+
+function loadLeaderboard(){
+  fetch(FB_URL+'/poker_chips.json').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('lb-list');
+    if(!d){el.innerHTML='<div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px 0">No players yet — be the first!</div>';return}
+    const list=Object.values(d).sort((a,b)=>b.chips-a.chips).slice(0,10);
+    el.innerHTML=list.map((p,i)=>`
+      <div class="lb-row">
+        <div class="lb-rank ${i===0?'g':i===1?'s':i===2?'b':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+        <div class="lb-av">${p.av||'🎰'}</div>
+        <div class="lb-name">${p.name}</div>
+        <div class="lb-chips">🪙 ${p.chips.toLocaleString()}</div>
+      </div>`).join('');
+  }).catch(()=>{});
+}
+
+function joinRoom(roomId){
+  const room=ROOMS[roomId];
+  if(!room)return;
+  currentRoom=roomId;
+  NSEATS=room.seats;
+  MY=NSEATS-1; // player always in last seat
+  // Adjust felt shape for HU
+  const felt=document.getElementById('felt');
+  if(felt){felt.className='felt'+(room.huMode?' hu-felt':'');}
+  document.getElementById('lobby').classList.remove('on');
+  document.getElementById('game').classList.add('on');
+  document.getElementById('hdr-title').textContent=room.icon+' '+room.name;
+  // Heads-up felt styling
+  document.getElementById('felt').className='felt'+(room.huMode?' hu-felt':'');
+  newTable(room);
+  highlightCurrentRoom(roomId);
+}
+
+function switchRoom(roomId){
+  closeMenu();closeDrawer();
+  if(roomId===currentRoom){showToast('Already at this table!');return}
+  // Save chips before switching
+  if(G&&G.seats&&G.seats[MY]){ME.chips=G.seats[MY].chips;saveChips();}
+  stopGame();
+  joinRoom(roomId);
+}
+
+function highlightCurrentRoom(roomId){
+  document.querySelectorAll('.menu-room').forEach(el=>{el.classList.remove('current')});
+  document.querySelectorAll('.menu-room').forEach(el=>{
+    if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes(roomId))el.classList.add('current');
+  });
+}
+
+/* ═══ MENU ═══ */
+function openMenu(){document.getElementById('menu-overlay').classList.add('on');document.getElementById('menu-panel').classList.add('open')}
+function closeMenu(){document.getElementById('menu-overlay').classList.remove('on');document.getElementById('menu-panel').classList.remove('open')}
+
+/* ═══ TABLE SETUP ═══ */
+function newTable(room){
+  startTableChat(room.id);
+  chatLog=[];seatAction={};
+  const usedN=new Set([ME.name]);
+  const seats=Array(NSEATS).fill(null).map((_,i)=>{
+    if(i===MY)return{name:ME.name,av:ME.av,chips:ME.chips,bot:false,folded:false,cards:[],bet:0,allIn:false,active:true,real:true};
+    let n;do{n=BN[0|Math.random()*BN.length]}while(usedN.has(n));
+    usedN.add(n);
+    const aggr=room.id==='royal'||room.id==='highroller'?0.35:0.2;
+    return{name:n,av:BA[0|Math.random()*BA.length],chips:room.sb*120+0|Math.random()*room.sb*200,bot:true,folded:false,cards:[],bet:0,allIn:false,active:true,real:false,aggr};
+  });
+  G={seats,deck:[],board:[],pot:0,phase:'idle',dealer:MY-1<0?NSEATS-2:MY-1,currentBet:room.bb,SB:room.sb,BB:room.bb,hand:0,currentTurn:-1,queue:[],qpos:0,lastRaiser:-1,action:'Welcome!',acted:{},huMode:room.huMode};
+  renderAll();
+  sysChat('Welcome to '+room.name+'! 🃏');
+  setTimeout(dealHand,2000);
+}
+
+function stopGame(){
+  if(ttimer)clearTimeout(ttimer);
+  busy=false;G=null;
+}
+
+function leaveTable(){
+  if(!confirm('Leave the table? Your chips will be saved.'))return;
+  if(G&&G.seats&&G.seats[MY]){
+    ME.chips=G.seats[MY].chips;
+    saveChips();
+  }
+  sittingOut=false;
+  stopTableChat();
+  stopGame();showLobby();
+}
+
+/* ═══ DEAL ═══ */
+function dealHand(){
+  if(!G)return;
+  busy=false;clearTimeout(ttimer);seatAction={};
+  G.hand++;G.deck=mkDeck();G.board=[];G.pot=0;G.currentBet=G.BB;G.phase='preflop';G.currentTurn=-1;G.reveal=false;G.action=`Hand #${G.hand}`;G.acted={};
+  G.seats.forEach(s=>{if(s){s.folded=false;s.cards=[];s.bet=0;s.allIn=false;s.active=s.chips>0}});
+  let tries=0;do{G.dealer=(G.dealer+1)%NSEATS;tries++}while((!G.seats[G.dealer]||!G.seats[G.dealer].active)&&tries<NSEATS);
+  const act=activePl();
+  // If player is sitting out, mark them as folded from start
+  if(sittingOut && act.includes(MY)){
+    // Still deal cards but they auto-fold pre-flop
+    act.forEach(i=>{G.seats[i].cards=[G.deck.pop(),G.deck.pop()]});
+    G.seats[MY].folded = true;
+    sysChat('You are sitting out this hand.');
+  } else {
+    act.forEach(i=>{G.seats[i].cards=[G.deck.pop(),G.deck.pop()]});
+  }
+  const sb=act[0],bb=act[1];
+  postBlind(sb,G.SB);postBlind(bb,G.BB);
+  G.pot=G.seats[sb].bet+G.seats[bb].bet;G.currentBet=G.BB;
+  seatAction[sb]='SB';seatAction[bb]='BB';
+  const bbPos=act.indexOf(bb);
+  // In heads-up, preflop action starts with SB (who is also dealer/button)
+  // In 6-player, action starts with player after BB
+  if(NSEATS===2){
+    // HU: SB acts first preflop (standard HU rules)
+    G.queue=[sb,bb];
+  }else{
+    G.queue=[...act.slice(bbPos+1),...act.slice(0,bbPos+1)];
+  }
+  G.qpos=0;G.lastRaiser=-1;
+  sysChat(`Hand #${G.hand} — Blinds ${G.SB}/${G.BB}`);
+  renderAll();nextTurn();
+}
+function postBlind(i,amt){const s=G.seats[i];const a=Math.min(amt,s.chips);s.chips-=a;s.bet=a;if(s.chips===0)s.allIn=true}
+function activePl(){const r=[];for(let k=1;k<=NSEATS;k++){const i=(G.dealer+k)%NSEATS;if(G.seats[i]&&G.seats[i].active)r.push(i)}return r}
+function inHand(){return G.seats.map((s,i)=>s&&!s.folded&&s.active?i:-1).filter(i=>i>=0)}
+
+/* ═══ TURN ENGINE ═══ */
+function nextTurn(){
+  if(!G||busy){return;} // strictly guard
+  clearTimeout(ttimer);
+  const alive=inHand();
+  if(alive.length<=1){
+    if(G)G._lastWinReason='Others folded';
+    endHand(alive.length?alive:[]);
+    return;
+  }
+  const need=alive.filter(i=>{
+    const s=G.seats[i];
+    return !s.allIn&&(s.bet<G.currentBet||!G.acted[i]);
+  });
+  if(!need.length){advanceStreet();return;}
+  let safety=0;
+  while(G.qpos<G.queue.length&&safety<20){
+    if(need.includes(G.queue[G.qpos]))break;
+    G.qpos++;safety++;
+  }
+  if(G.qpos>=G.queue.length||!need.includes(G.queue[G.qpos])){
+    advanceStreet();return;
+  }
+  const idx=G.queue[G.qpos];
+  G.currentTurn=idx;
+  renderAll();
+  if(idx===MY){
+    // It is the human player's turn - show actions and STOP
+    showActions();
+    return; // <- critical: no bot timer, no further processing
+  }
+  // Bot's turn
+  hideActions();
+  const capturedIdx=idx;
+  const botDelay=1800+Math.floor(Math.random()*1400);
+  ttimer=setTimeout(()=>{
+    if(!G||busy||G.currentTurn!==capturedIdx)return; // abort if state changed
+    botAct(capturedIdx);
+  },botDelay);
+}
+
+/* ═══ ACTION ═══ */
+function applyAction(idx,action,raiseTotal){
+  if(!G||busy)return;
+  busy=true;hideActions();
+  if(!G.acted)G.acted={};
+  const s=G.seats[idx];
+  const toCall=Math.max(0,G.currentBet-s.bet);
+  if(action==='fold'){s.folded=true;G.action=s.name+' folds';seatAction[idx]='FOLD';chatAction(s.name,'folds 🙈')}
+  else if(action==='check'){
+    if(toCall>0)action='call';
+    else{G.action=s.name+' checks';seatAction[idx]='CHECK';chatAction(s.name,'checks ✋')}
+  }
+  if(action==='call'){
+    const a=Math.min(toCall,s.chips);s.chips-=a;s.bet+=a;G.pot+=a;
+    if(s.chips===0){s.allIn=true;G.action=s.name+' calls all-in!';seatAction[idx]='ALL-IN';chatAction(s.name,'calls ALL-IN! 🔥')}
+    else{G.action=s.name+' calls '+a.toLocaleString();seatAction[idx]='CALL';chatAction(s.name,'calls '+a.toLocaleString())}
+  }else if(action==='raise'){
+    const total=Math.min(raiseTotal,s.chips+s.bet);const add=Math.max(0,total-s.bet);
+    s.chips-=add;G.pot+=add;s.bet=total;
+    if(total>G.currentBet){
+      G.currentBet=total;G.lastRaiser=idx;
+      const ih=inHand();const myPos=ih.indexOf(idx);
+      G.queue=[...ih.slice(myPos+1),...ih.slice(0,myPos+1)].filter(i=>!G.seats[i].allIn);
+      G.qpos=0;G.acted={[idx]:true};
+    }
+    if(s.chips===0){s.allIn=true;G.action=s.name+' ALL-IN! 🔥';seatAction[idx]='ALL-IN';chatAction(s.name,'goes ALL-IN! 🔥🔥')}
+    else{G.action=s.name+' raises to '+s.bet.toLocaleString();seatAction[idx]='RAISE';chatAction(s.name,'raises to '+s.bet.toLocaleString()+' 💰')}
+  }else if(action==='allin'){
+    const a=s.chips;s.chips=0;s.bet+=a;G.pot+=a;s.allIn=true;
+    if(s.bet>G.currentBet){G.currentBet=s.bet;G.lastRaiser=idx;G.acted={[idx]:true}}
+    G.action=s.name+' ALL-IN! 🔥';seatAction[idx]='ALL-IN';chatAction(s.name,'goes ALL-IN! 🔥🔥🔥');
+  }
+  G.acted[idx]=true;G.qpos++;
+  renderAll();
+  busy=false;
+  // Short pause so UI renders, then advance turn
+  setTimeout(nextTurn,500);
+}
+
+function botAct(idx){
+  if(!G||G.currentTurn!==idx)return;
+  const s=G.seats[idx];const toCall=Math.max(0,G.currentBet-s.bet);
+  const aggr=s.aggr||0.2;const r=Math.random();
+  let act;
+  if(toCall===0){act=r<0.55-aggr?'check':'raise'}
+  else if(toCall>=s.chips){act=r<0.5+aggr?'allin':'fold'}
+  else{if(r<0.2-aggr*0.5)act='fold';else if(r<0.65-aggr)act='call';else act='raise'}
+  const mn=Math.max(G.BB*2,G.currentBet*2);
+  applyAction(idx,act,Math.min(s.chips+s.bet,mn+0|Math.random()*G.BB*4));
+}
+function pact(action){
+  if(!G||busy)return;
+  if(G.currentTurn!==MY){return;} // not your turn
+  if(!document.getElementById('actarea').classList.contains('on')){return;} // actions not shown
+  closeRaise();
+  applyAction(MY,action,betAmt);
+}
+function confirmRaise(){
+  if(!G||busy)return;
+  if(G.currentTurn!==MY){return;}
+  if(!document.getElementById('actarea').classList.contains('on')){return;}
+  closeRaise();
+  applyAction(MY,'raise',betAmt);
+}
+
+/* ═══ STREET ═══ */
+function advanceStreet(){
+  if(!G||busy)return;busy=true;seatAction={};
+  G.seats.forEach(s=>{if(s)s.bet=0});G.currentBet=0;G.lastRaiser=-1;G.currentTurn=-1;G.acted={};
+  const canAct=inHand().filter(i=>!G.seats[i].allIn);
+  if(G.phase==='preflop'){G.phase='flop';G.board=[G.deck.pop(),G.deck.pop(),G.deck.pop()];sysChat('— FLOP —')}
+  else if(G.phase==='flop'){G.phase='turn';G.board.push(G.deck.pop());sysChat('— TURN —')}
+  else if(G.phase==='turn'){G.phase='river';G.board.push(G.deck.pop());sysChat('— RIVER —')}
+  else{busy=false;doShowdown();return}
+  G.queue=activePl().filter(i=>inHand().includes(i)&&!G.seats[i].allIn);G.qpos=0;
+  renderAll();busy=false;
+  if(!canAct.length){setTimeout(advanceStreet,2500);}else{setTimeout(function(){if(!busy)nextTurn();},800);}
+}
+
+/* ═══ SHOWDOWN ═══ */
+function doShowdown(){
+  G.phase='showdown';G.reveal=true;G.currentTurn=-1;
+  const cont=inHand();renderAll();
+  if(!cont.length){setTimeout(dealHand,3000);return}
+  let best=-1,winners=[];
+  cont.forEach(i=>{const h=evalHand(G.seats[i].cards,G.board);if(h.score>best){best=h.score;winners=[i]}else if(h.score===best)winners.push(i)});
+  const wh=evalHand(G.seats[winners[0]].cards,G.board);
+  const wn=winners.map(i=>G.seats[i].name).join(' & ');
+  G._lastWinReason=wh.name; // store for endHand + history
+  // Build win display with each player's hand
+  let handDescs='';
+  if(G.reveal){
+    cont.forEach(i=>{
+      const h=evalHand(G.seats[i].cards,G.board);
+      const isW=winners.includes(i);
+      handDescs+=`${isW?'🏆':'  '} ${G.seats[i].name}: ${h.name}\n`;
+    });
+  }
+  G.action=`🏆 ${wn} wins with ${wh.name}!`;
+  sysChat(`🏆 ${wn} wins ${G.pot.toLocaleString()} chips — ${wh.name}!`);
+  renderAll();setTimeout(()=>endHand(winners),5000);
+}
+
+function endHand(winners){
+  if(!G)return;
+  const share=Math.floor(G.pot/Math.max(winners.length,1));
+  winners.forEach(i=>{if(G.seats[i])G.seats[i].chips+=share});
+  const wn=winners.map(i=>G.seats[i]?.name||'?').join(' & ');
+  const winReason=G._lastWinReason||'';
+  showWinToast(wn,G.pot,winners.includes(MY),winReason);
+  ME.chips=G.seats[MY].chips;
+  localStorage.setItem('pk_'+ME.name,ME.chips);
+  // ✅ Record win/loss for profile stats
+  if(winners.includes(MY)){
+    recordWin(share,winReason);
+  } else {
+    recordLoss();
+  }
+  // Save chips to Firebase leaderboard
+  saveChips();
+  G.pot=0;G.reveal=false;G.currentTurn=-1;G.phase='idle';G.acted={};seatAction={};
+  // Rebuy busted bots — replace with fresh named bot
+  const BN_all=['Alfie','Bessie','Charlie','Dot','Eddie','Flo','George','Harry','Iris','Jack','Karen','Leo','Max','Nina','Oscar','Pippa','Quinn','Rex','Sara','Tom'];
+  G.seats.forEach((s,i)=>{
+    if(s&&s.bot&&s.chips<G.BB*4){
+      // Replace with brand new bot
+      const usedNames=new Set(G.seats.filter((x,j)=>x&&j!==i).map(x=>x.name));
+      let newName;
+      do{newName=BN_all[0|Math.random()*BN_all.length]}while(usedNames.has(newName));
+      const BA_all=['🤠','😎','🧐','👑','🦊','🐻','🎩','💎','🌟','🎭','😏','🃏','🐒','🦍','🦧'];
+      G.seats[i]={name:newName,av:BA_all[0|Math.random()*BA_all.length],chips:G.SB*100+0|Math.random()*G.SB*200,bot:true,folded:false,cards:[],bet:0,allIn:false,active:true,real:false,aggr:0.15+Math.random()*0.35};
+      sysChat(newName+' joined the table 🐒');
+    }
+  });
+  if(G.seats[MY].chips<G.BB*4){
+    G.seats[MY].chips=10000;ME.chips=10000;
+    localStorage.setItem('pk_'+ME.name,10000);
+    saveChips();
+    sysChat('🎁 Free rebuy — 10,000 chips!');
+  }
+  renderAll();setTimeout(dealHand,6000);
+}
+
+/* ═══ RENDER ═══ */
+const SPOS6=[[50,5],[83,18],[95,50],[83,82],[17,82],[5,50]]; // 6-player
+const SPOS2=[[50,12],[50,88]]; // heads-up
+const SPOS9=[[50,4],[72,9],[89,26],[95,50],[83,76],[62,90],[38,90],[17,76],[5,50]]; // 9-player
+function getSPOS(){if(NSEATS===2)return SPOS2;if(NSEATS===9)return SPOS9;return SPOS6;}
+
+function renderAll(){
+  if(!G)return;
+  renderTable();renderCommunity();
+  document.getElementById('hpot').textContent=G.pot.toLocaleString();
+  const ph={idle:'Waiting',preflop:'Pre-Flop',flop:'Flop',turn:'Turn',river:'River',showdown:'Showdown'};
+  document.getElementById('hphase').textContent=(ph[G.phase]||'')+` — ${G.SB}/${G.BB}`;
+  document.getElementById('feltpot').style.display=G.pot>0?'block':'none';
+  document.getElementById('feltpot').textContent='🪙 '+G.pot.toLocaleString();
+  document.getElementById('status').textContent=G.action||'';
+}
+
+function renderTable(){
+  const container=document.getElementById('seats-container');
+  container.innerHTML='';
+  const spos=getSPOS();
+  G.seats.forEach((s,i)=>{
+    if(i===MY){renderMyStrip(s);return}
+    const [lp,tp]=spos[i]||[50,50];
+    const div=document.createElement('div');
+    div.className='seat';
+    div.style.cssText=`left:${lp}%;top:${tp}%`;
+    div.setAttribute('data-si',i);
+    if(!s){div.innerHTML=`<div class="av" style="border-style:dashed;opacity:.3;cursor:pointer" onclick="requestJoin()">🪑</div><div class="sname" style="opacity:.3">Empty</div>`;container.appendChild(div);return}
+    const isTurn=G.currentTurn===i&&!s.folded;
+    const isDlr=G.dealer===i;
+    const showC=G.reveal&&!s.folded;
+    let avcls='av';if(isTurn)avcls+=' myturn';if(s.folded)avcls+=' folded';
+    let cardsHtml='';
+    if(s.cards&&s.cards.length===2&&!s.folded)cardsHtml=showC?s.cards.map(c=>mkCard(c,'sm')).join(''):'<div class="card sm back"></div><div class="card sm back"></div>';
+    const act=seatAction[i];
+    const actCls={FOLD:'fold-lbl',CALL:'call-lbl',RAISE:'raise-lbl',CHECK:'check-lbl','ALL-IN':'allin-lbl',SB:'blind-lbl',BB:'blind-lbl'}[act]||'';
+    const actHtml=act&&!s.folded?`<div class="saction ${actCls}">${act}</div>`:'';
+    const betHtml=s.bet>0&&G.phase!=='showdown'?`<div class="sbet">🪙 ${s.bet.toLocaleString()}</div>`:'';
+    const aiHtml=s.allIn&&!s.folded?'<div class="sallin">ALL-IN 🔥</div>':'';
+    const dbHtml=isDlr?'<div class="dchip">D</div>':'';
+    div.innerHTML=`<div class="opp-cards">${cardsHtml}</div><div class="${avcls}" style="overflow:hidden;display:flex;align-items:center;justify-content:center">${renderAvHtml(s.av,38)}${dbHtml}</div><div class="sname">${s.name}${s.real?' 👤':''}</div><div class="sstack">🪙 ${s.chips.toLocaleString()}</div>${actHtml}${betHtml}${aiHtml}`;
+    container.appendChild(div);
+  });
+}
+
+function renderMyStrip(s){
+  let strip=document.getElementById('my-strip');
+  if(strip)strip.remove();
+  if(!s)return;
+  strip=document.createElement('div');strip.id='my-strip';strip.className='my-seat';
+  const isDlr=G.dealer===MY;
+  const isTurn=G.currentTurn===MY&&!s.folded;
+  let avcls='av';if(isTurn)avcls+=' myturn';if(s.folded)avcls+=' folded';
+  let cardsHtml='';
+  if(s.cards&&s.cards.length===2&&!s.folded)cardsHtml=s.cards.map(c=>mkCard(c,'lg')).join('');
+  else if(s.folded)cardsHtml='<div style="color:rgba(255,255,255,.3);font-size:12px">Folded</div>';
+  const h=s.cards&&s.cards.length===2&&!s.folded&&G.board.length>0?evalHand(s.cards,G.board):null;
+  const rankHtml=h&&h.name?`<div class="my-rank">${h.name}</div>`:'';
+  const betHtml=s.bet>0&&G.phase!=='showdown'?`<div class="my-bet">🪙 ${s.bet.toLocaleString()}</div>`:'';
+  const aiHtml=s.allIn&&!s.folded?'<div class="my-allin">ALL-IN 🔥</div>':'';
+  const act=seatAction[MY];
+  const actCls={FOLD:'fold-lbl',CALL:'call-lbl',RAISE:'raise-lbl',CHECK:'check-lbl','ALL-IN':'allin-lbl',SB:'blind-lbl',BB:'blind-lbl'}[act]||'';
+  const actHtml=act?`<div class="saction ${actCls}" style="margin-top:2px">${act}</div>`:'';
+  const dbHtml=isDlr?'<div class="dchip" style="position:absolute;top:-5px;right:-5px">D</div>':'';
+  strip.innerHTML=`
+  <div class="${avcls}" style="width:52px;height:52px;font-size:26px;flex-shrink:0;overflow:hidden">${renderAvHtml(ME.av,48)}${dbHtml}</div>
+  <div class="my-sinfo" style="flex-shrink:0">
+    <div class="my-name">▲ ${s.name}</div>
+    <div class="my-stack">🪙 ${s.chips.toLocaleString()}</div>
+    ${betHtml}${aiHtml}${actHtml}
+  </div>
+  <div style="display:flex;flex-direction:row;gap:8px;align-items:flex-end;flex-shrink:0">
+    ${cardsHtml}
+  </div>
+  ${rankHtml}
+`;
+  let wrap=document.getElementById('my-strip-wrap');
+  if(!wrap){wrap=document.createElement('div');wrap.id='my-strip-wrap';wrap.style.cssText='display:flex;justify-content:center;padding:6px 0';document.getElementById('tcol').appendChild(wrap)}
+  wrap.innerHTML='';wrap.appendChild(strip);
+}
+
+function renderCommunity(){
+  if(!G)return;
+  const board=G.board||[];
+  let html=board.map(c=>mkCard(c,'md')).join('');
+  for(let i=board.length;i<5;i++)html+=`<div class="card md ghost"></div>`;
+  document.getElementById('comm').innerHTML=html;
+}
+function renderMyHand(){}
+function mkCard(c,cls){
+  if(!c)return`<div class="card ${cls} ghost"></div>`;
+  return`<div class="card ${cls} ${red(c)?'red':'blk'}"><div class="cr">${c.r}</div><div class="cs">${c.s}</div></div>`;
+}
+
+/* ═══ ACTIONS UI ═══ */
+function showActions(){
+  if(!G)return;
+  const s=G.seats[MY];
+  const toCall=Math.max(0,G.currentBet-s.bet);
+  const canChk=toCall===0;
+  document.getElementById('actarea').classList.add('on');
+  document.getElementById('waitmsg').style.display='none';
+  document.getElementById('bchk').style.display=canChk?'':'none';
+  document.getElementById('bchk').onclick=()=>pact('check');
+  const bc=document.getElementById('bcall');
+  bc.style.display=canChk?'none':'';
+  bc.textContent='Call '+toCall.toLocaleString();
+  bc.onclick=()=>pact('call');
+  const minR=Math.max(G.BB*2,G.currentBet*2);
+  const maxR=s.chips+s.bet;
+  betAmt=Math.max(minR,Math.min(maxR,betAmt));
+  const sl=document.getElementById('rslider');
+  sl.min=minR;sl.max=maxR;sl.value=betAmt;
+  updateRaise();
+  document.getElementById('rpanel').classList.add('on');
+}
+function hideActions(){
+  document.getElementById('actarea').classList.remove('on');
+  document.getElementById('rpanel').classList.remove('on');
+  const wm=document.getElementById('waitmsg');
+  wm.style.display='block';
+  wm.textContent=!G||G.phase==='idle'||G.phase==='showdown'?'Next hand soon…':'Waiting for your turn…';
+  // Safety: if actions are hidden and it was our turn, something went wrong
+  // Don't clear currentTurn here - let the engine handle it
+}
+function openRaise(){
+  if(!G)return;
+  const s=G.seats[MY];const minR=Math.max(G.BB*2,G.currentBet*2);
+  if(s.chips<=minR-s.bet){pact('allin');return}
+  document.getElementById('rpanel').classList.add('on');
+}
+function closeRaise(){document.getElementById('rpanel').classList.remove('on')}
+function updateRaise(){document.getElementById('rval').textContent=betAmt.toLocaleString();document.getElementById('rconfirm').textContent=betAmt.toLocaleString()}
+function sliderMove(v){betAmt=+v;updateRaise()}
+function nudge(d){
+  if(!G)return;
+  const s=G.seats[MY];const step=Math.max(G.BB,0|betAmt*0.1);
+  const minR=Math.max(G.BB*2,G.currentBet*2);
+  betAmt=Math.max(minR,Math.min(s.chips+s.bet,betAmt+d*step));
+  document.getElementById('rslider').value=betAmt;updateRaise();
+}
+function qbet(t){
+  if(!G)return;
+  const s=G.seats[MY];const minR=Math.max(G.BB*2,G.currentBet*2);const maxR=s.chips+s.bet;
+  let a;
+  if(t==='min')a=minR;else if(t==='third')a=Math.floor(G.pot/3)+G.currentBet;
+  else if(t==='half')a=Math.floor(G.pot/2)+G.currentBet;else if(t==='pot')a=G.pot+G.currentBet;
+  else if(t==='2x')a=G.pot*2+G.currentBet;else a=maxR;
+  betAmt=Math.max(minR,Math.min(maxR,a));
+  document.getElementById('rslider').value=betAmt;updateRaise();
+}
+
+/* ═══ CHAT ═══ */
+/* ═══ REAL-TIME TABLE CHAT ═══ */
+let tableChatPoll=null;
+let tableChatKey=null;
+
+function sysChat(msg){addChat(null,msg,true);}
+function chatAction(name,msg){addChat(name,msg,false);}
+
+function addChat(name,msg,sys){
+  chatLog.push({name,msg,sys,ts:Date.now()});
+  if(chatLog.length>80)chatLog=chatLog.slice(-80);
+  renderChat();
+  // Push real player messages to Firebase
+  if(!sys&&name&&tableChatKey){
+    fetch(FB_URL+'/poker_table_chat/'+tableChatKey+'.json',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,msg,ts:Date.now(),sys:false})
+    }).catch(()=>{});
+  }
+}
+
+function sendChat(){
+  const inp=document.getElementById('chatinp');
+  if(!inp)return;
+  const msg=inp.value.trim();
+  if(!msg||!ME.name)return;
+  inp.value='';
+  addChat(ME.name,msg,false);
+}
+
+function sendQuickPhrase(sel){
+  const phrase=sel.value;
+  sel.selectedIndex=0;
+  if(!phrase||!ME.name)return;
+  addChat(ME.name,phrase,false);
+}
+
+function startTableChat(roomId){
+  stopTableChat();
+  tableChatKey='room_'+(roomId||'default');
+  fetchTableChat();
+  tableChatPoll=setInterval(fetchTableChat,4000);
+}
+
+function stopTableChat(){
+  if(tableChatPoll)clearInterval(tableChatPoll);
+  tableChatPoll=null;
+}
+
+function fetchTableChat(){
+  if(!tableChatKey)return;
+  fetch(FB_URL+'/poker_table_chat/'+tableChatKey+'.json')
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d)return;
+      const all=Array.isArray(d)?d:Object.values(d);
+      const remote=all.filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-60);
+      const myKeys=new Set(chatLog.filter(m=>!m.sys).map(m=>m.ts+'_'+m.name));
+      remote.forEach(m=>{
+        const k=m.ts+'_'+m.name;
+        if(!myKeys.has(k)&&m.name!==ME.name){
+          chatLog.push({name:m.name,msg:m.msg,sys:false,ts:m.ts});
+        }
+      });
+      chatLog.sort((a,b)=>(a.ts||0)-(b.ts||0));
+      if(chatLog.length>80)chatLog=chatLog.slice(-80);
+      renderChat();
+      const recent=chatLog.filter(m=>!m.sys&&Date.now()-(m.ts||0)<300000);
+      const names=new Set(recent.map(m=>m.name).filter(Boolean));
+      const pl=document.getElementById('chat-players');
+      if(pl&&names.size>0)pl.textContent=names.size+' chatting';
+    }).catch(()=>{});
+}
+
+function renderChat(){
+  const el=document.getElementById('chatmsgs');
+  if(!el)return;
+  el.innerHTML=chatLog.slice(-60).map(m=>{
+    if(m.sys)return`<div class="cm sys">${m.msg}</div>`;
+    const isMe=m.name===ME.name;
+    return`<div class="cm"><span class="cn${isMe?' me':''}">${m.name}: </span><span class="ct">${m.msg}</span></div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+/* ═══ REAL PLAYER JOIN ═══ */
+function requestJoin(){const n=prompt('Enter your BritChat username to join:');if(n&&n.trim()){const bot=G.seats.map((s,i)=>s&&s.bot?i:-1).filter(i=>i>=0);if(!bot.length)return;G.seats[bot[0]]={name:n.trim(),av:'👤',chips:ME.chips,bot:false,folded:false,cards:[],bet:0,allIn:false,active:G.phase==='idle',real:true};sysChat(n.trim()+' joined the table! 👋');renderAll()}}
+
+/* ═══ TOASTS ═══ */
+function showWinToast(name,pot,isMe){
+  const d=document.createElement('div');d.className='win-toast';
+  d.innerHTML=`<div class="wt1">${isMe?'🏆 You Win!':'🎲 '+name+' wins!'}</div><div class="wt2">${isMe?'You won':''+name+' won'} ${pot.toLocaleString()} chips${isMe?' 🎉':''}</div>`;
+  document.body.appendChild(d);setTimeout(()=>d.remove(),5000);
+}
+function toast(msg){const t=document.createElement('div');t.className='toastm';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+/* ═══ DRAWER ═══ */
+function openDrawer(){
+  document.getElementById('drawer-overlay').classList.add('on');
+  document.getElementById('drawer').classList.add('open');
+  // Highlight current room
+  document.querySelectorAll('.drawer-room').forEach(el=>{el.classList.remove('current')});
+  if(currentRoom){
+    document.querySelectorAll('.drawer-room').forEach(el=>{
+      if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes(currentRoom))el.classList.add('current');
+    });
+  }
+  // Load leaderboard in drawer
+  loadDrawerLb();
+}
+function closeDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('on');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+function loadDrawerLb(){
+  fetch(FB_URL+'/poker_chips.json').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('drawer-lb');
+    if(!d){el.innerHTML='<div style="color:rgba(255,255,255,.3);font-size:11px">No players yet!</div>';return}
+    const list=Object.values(d).sort((a,b)=>b.chips-a.chips).slice(0,5);
+    el.innerHTML=list.map((p,i)=>`
+      <div class="drawer-lb-row">
+        <div class="dlb-rank ${i===0?'g':i===1?'s':i===2?'b':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+        <div class="dlb-av">${p.av||'🎰'}</div>
+        <div class="dlb-name">${p.name}</div>
+        <div class="dlb-chips">🪙 ${p.chips.toLocaleString()}</div>
+      </div>`).join('');
+  }).catch(()=>{document.getElementById('drawer-lb').textContent='—'});
+}
+
+/* ═══ DAILY BONUS ═══ */
+function checkDailyBonus(){
+  const key='pk_daily_'+ME.name;
+  const last=+localStorage.getItem(key)||0;
+  const btn=document.getElementById('daily-btn');
+  if(!btn)return;
+  const elapsed=Date.now()-last;
+  if(elapsed>=86400000){
+    btn.textContent='🎁 Claim Free Chips!';btn.style.opacity='1';btn.disabled=false;
+  }else{
+    const hrs=Math.floor((86400000-elapsed)/3600000);
+    const mins=Math.floor(((86400000-elapsed)%3600000)/60000);
+    btn.textContent='⏰ '+hrs+'h '+mins+'m';btn.style.opacity='.5';btn.disabled=true;
+  }
+}
+function claimDaily(){
+  const key='pk_daily_'+ME.name;
+  if(Date.now()-(+localStorage.getItem(key)||0)<86400000){showToast('Already claimed today! ⏰');return}
+  const bonus=Math.max(1000,Math.floor(ME.chips*0.1)+500);
+  ME.chips+=bonus;
+  localStorage.setItem('pk_'+ME.name,ME.chips);
+  localStorage.setItem(key,Date.now());
+  saveChips();
+  showToast('🎁 Daily bonus: +'+bonus.toLocaleString()+' chips!');
+  const lc=document.getElementById('lobby-chips');if(lc)lc.textContent=ME.chips.toLocaleString();
+  checkDailyBonus();
+}
+function showToast(msg,dur=3500){
+  const t=document.createElement('div');t.className='toastm';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),dur);
+}
+
+/* ═══ AVATAR RENDERER ═══ */
+function renderAvHtml(av, size=36){
+  if(!av)return'🎰';
+  if(String(av).startsWith('__svg__')){
+    const id=av.replace('__svg__','');
+    // Try window.POKER_SVG_AVATARS (set from localStorage on load)
+    const svgs=(window.POKER_SVG_AVATARS)||[];
+    const match=svgs.find(s=>s.id===id);
+    if(match){
+      // Replace the opening <svg tag to add size attrs
+      const sized=match.svg.replace('<svg ','<svg width="'+size+'px" height="'+size+'px" style="display:block;flex-shrink:0" ');
+      return sized;
+    }
+    return'🐒';
+  }
+  // Photo data URI
+  if(String(av).startsWith('data:image')){
+    return`<img src="${av}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;display:block">`;
+  }
+  return av; // emoji
+}
+
+
+/* ═══ SIT OUT ═══ */
+let sittingOut = false;
+function toggleSitOut(){
+  sittingOut = !sittingOut;
+  const lbl = document.getElementById('sitout-label');
+  const btn = document.getElementById('sitout-txt-btn');
+  if(lbl) lbl.textContent = sittingOut ? '⏸ Sitting out' : 'Sitting in';
+  if(lbl) lbl.style.color = sittingOut ? '#ffaa00' : 'rgba(255,255,255,.35)';
+  if(btn){
+    btn.textContent = sittingOut ? '▶ Sit Back In' : 'Sit Out Next Hand';
+    btn.style.borderColor = sittingOut ? 'rgba(68,221,119,.5)' : 'rgba(255,170,0,.4)';
+    btn.style.color = sittingOut ? '#44dd77' : '#ffaa00';
+  }
+  if(sittingOut){
+    showToast("Sitting out — you will skip the next hand");
+    if(G && G.currentTurn === MY) pact('fold');
+  } else {
+    showToast("You are back in!");
+  }
+}
+
+/* ═══ LOGOUT FROM POKER ═══ */
+function doLogoutPoker(){
+  if(!confirm('Log out? Your chips will be saved.')) return;
+  if(G && G.seats && G.seats[MY]){
+    ME.chips = G.seats[MY].chips;
+    saveChips();
+  }
+  stopGame();
+  localStorage.removeItem('nt_session');
+  window.location.href = '/index.html';
+}
+
+
+/* ═══ LOBBY LIVE CHAT ═══ */
+let lobbyChats = [];
+let lobbyChatPoll = null;
+
+
+
+
+
+
+
+
+/* ═══ NO LOBBY SPAM ═══ */
+function postToChat(){}
+
+/* ═══ REAL PLAYER JOIN ═══ */
+function checkForRealPlayers(){
+  if(!G||!currentRoom)return;
+  try{
+    fetch(`${FB_URL}/poker_lobby/${currentRoom}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({host:ME.name,hand:G.hand,phase:G.phase,ts:Date.now()})});
+    fetch(`${FB_URL}/poker_join/${currentRoom}.json`).then(r=>r.json()).then(d=>{
+      if(!d||!d.name||d.name===ME.name||Date.now()-d.ts>30000)return;
+      joinRealPlayer(d.name,d.av||'🎰',d.chips||10000);
+      fetch(`${FB_URL}/poker_join/${currentRoom}.json`,{method:'DELETE'});
+    });
+  }catch(e){}
+}
+function joinRealPlayer(name,av,chips){
+  if(!G)return;
+  const bot=G.seats.map((s,i)=>s&&s.bot?i:-1).filter(i=>i>=0);
+  if(!bot.length)return;
+  G.seats[bot[0]]={name,av,chips,bot:false,folded:false,cards:[],bet:0,allIn:false,active:G.phase==='idle',real:true};
+  sysChat(`${name} joined the table! 👋`);renderAll();
+}
+
+
+/* ═══ RANK SYSTEM ═══ */
+function getRank(chips){
+  if(chips>=1000000)return{emoji:'♠️',name:'Poker Legend',col:'#f0c060'};
+  if(chips>=500000) return{emoji:'💎',name:'Diamond',col:'#88eeff'};
+  if(chips>=200000) return{emoji:'🏆',name:'Platinum',col:'#e8e8ff'};
+  if(chips>=100000) return{emoji:'🥇',name:'Gold',col:'#f0c060'};
+  if(chips>=50000)  return{emoji:'🥈',name:'Silver',col:'#c8c8c8'};
+  if(chips>=20000)  return{emoji:'🥉',name:'Bronze',col:'#c87533'};
+  if(chips>=5000)   return{emoji:'🐒',name:'Chimp',col:'#88ff88'};
+  return                 {emoji:'🃏',name:'Rookie',col:'#aaaaaa'};
+}
+
+/* ═══ PROFILE PANEL ═══ */
+function openProfile(){
+  renderProfilePanel();
+  document.getElementById('prof-overlay').classList.add('on');
+  document.getElementById('prof-panel').classList.add('open');
+}
+function closeProfile(){
+  document.getElementById('prof-overlay').classList.remove('on');
+  document.getElementById('prof-panel').classList.remove('open');
+}
+function renderProfilePanel(){
+  const chips=G&&G.seats&&G.seats[MY]?G.seats[MY].chips:ME.chips;
+  const rank=getRank(chips);
+  const total=PROFILE.handsPlayed||0;
+  const wr=total>0?Math.round(PROFILE.wins/total*100):0;
+  const el=document.getElementById('prof-body');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="prof-hero">
+      <div class="prof-av-big">${renderAvHtml(ME.av||"🎰",80)}</div>
+      <div class="prof-pname">${ME.name}</div>
+      <div class="prof-pchips">🪙 ${chips.toLocaleString()} chips</div>
+      <div class="rank-pill" style="color:${rank.col};border-color:${rank.col}">${rank.emoji} ${rank.name}</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num green">${PROFILE.wins.toLocaleString()}</div><div class="stat-lbl">Hands Won</div></div>
+      <div class="stat-card"><div class="stat-num red">${PROFILE.losses.toLocaleString()}</div><div class="stat-lbl">Hands Lost</div></div>
+      <div class="stat-card"><div class="stat-num">${wr}%</div><div class="stat-lbl">Win Rate</div><div class="stat-bar"><div class="stat-bar-fill" style="width:${wr}%"></div></div></div>
+      <div class="stat-card"><div class="stat-num">${total.toLocaleString()}</div><div class="stat-lbl">Hands Played</div></div>
+      <div class="stat-card full"><div class="stat-num">🪙 ${(PROFILE.biggestWin||0).toLocaleString()}</div><div class="stat-lbl">Biggest Single Win</div></div>
+      <div class="stat-card full"><div class="stat-num">🪙 ${(PROFILE.totalWon||0).toLocaleString()}</div><div class="stat-lbl">Total Chips Won All-Time</div></div>
+    </div>
+    <button class="sp-action-btn" onclick="closeProfile();openHistory()">📜 View Full Game History →</button>
+  `;
+}
+
+/* ═══ HISTORY PANEL ═══ */
+function openHistory(){
+  renderHistoryPanel();
+  document.getElementById('hist-overlay').classList.add('on');
+  document.getElementById('hist-panel').classList.add('open');
+}
+function closeHistory(){
+  document.getElementById('hist-overlay').classList.remove('on');
+  document.getElementById('hist-panel').classList.remove('open');
+}
+function renderHistoryPanel(){
+  const el=document.getElementById('hist-body');
+  if(!el)return;
+  const hist=PROFILE.history||[];
+  const sumHtml=`
+    <div class="hist-summary">
+      <div class="hist-sum-item"><div class="hist-sum-val" style="color:#44dd88">${PROFILE.wins}</div><div class="hist-sum-lbl">Won</div></div>
+      <div class="hist-sum-item"><div class="hist-sum-val" style="color:#ff4444">${PROFILE.losses}</div><div class="hist-sum-lbl">Lost</div></div>
+      <div class="hist-sum-item"><div class="hist-sum-val">${PROFILE.handsPlayed}</div><div class="hist-sum-lbl">Played</div></div>
+      <div class="hist-sum-item"><div class="hist-sum-val" style="color:#f0c060;font-size:14px">🪙${(PROFILE.biggestWin||0).toLocaleString()}</div><div class="hist-sum-lbl">Best Win</div></div>
+    </div>`;
+  if(!hist.length){
+    el.innerHTML=sumHtml+'<div class="hist-empty">🃏 No hands recorded yet!<br>Take a seat and start playing.</div>';
+    return;
+  }
+  const rows=hist.slice(0,60).map(h=>{
+    const isWin=h.type==='win';
+    const icon=isWin?'🏆':'💸';
+    const reason=h.reason?` — ${h.reason}`:'';
+    const label=isWin?`Won ${(h.pot||0).toLocaleString()} chips${reason}`:'Lost the hand';
+    const date=new Date(h.ts).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const amtText=isWin?`+${(h.pot||0).toLocaleString()}`:`${(h.chips||0).toLocaleString()} left`;
+    return`<div class="hist-row ${h.type}"><div class="hist-icon">${icon}</div><div class="hist-info"><div class="hist-main">${label}</div><div class="hist-sub">${date}</div></div><div class="hist-amount ${h.type}">${amtText}</div></div>`;
+  }).join('');
+  el.innerHTML=sumHtml+'<div class="hist-list">'+rows+'</div>';
+}
+
+</script>
+
+
+<!-- PROFILE PANEL -->
+<div class="panel-overlay" id="prof-overlay" onclick="closeProfile()"></div>
+<div class="side-panel" id="prof-panel">
+  <div class="sp-hdr">
+    <div class="sp-hdr-title">🐒 My Profile</div>
+    <button class="sp-close" onclick="closeProfile()">✕</button>
+  </div>
+  <div class="sp-body" id="prof-body"></div>
+</div>
+
+<!-- HISTORY PANEL -->
+<div class="panel-overlay" id="hist-overlay" onclick="closeHistory()"></div>
+<div class="side-panel" id="hist-panel">
+  <div class="sp-hdr">
+    <div class="sp-hdr-title">📜 Game History</div>
+    <button class="sp-close" onclick="closeHistory()">✕</button>
+  </div>
+  <div class="sp-body" id="hist-body"></div>
+</div>
+</body>
+</html>
