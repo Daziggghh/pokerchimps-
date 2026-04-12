@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BritChat — UK Chat Rooms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiMwODBmMDgiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjM0IiByPSIxOCIgZmlsbD0iIzhCNDUxMyIvPjxwYXRoIGQ9Ik0xOCAyMiBMMjIgMTIgTDI3IDIwIEwzMiAxMCBMMzcgMjAgTDQyIDEyIEw0NiAyMiBaIiBmaWxsPSIjRkZENzAwIi8+PHJlY3QgeD0iMTgiIHk9IjIwIiB3aWR0aD0iMjgiIGhlaWdodD0iNSIgcng9IjIiIGZpbGw9IiNGRkQ3MDAiLz48L3N2Zz4=">
+<style>
+:root{
+  --bg:#080f08;--bg2:#0d180d;--bg3:#0f1e0f;
+  --surface:#162316;--surface2:#1c2e1c;
+  --border:rgba(80,180,60,.15);--border2:rgba(80,180,60,.28);
+  --green:#2d7a2d;--green2:#3aaa3a;--green3:#4dc44d;
+  --gold:#c8960c;--gold2:#f0c060;--gold3:#ffd700;
+  --text:#e0f0e0;--text2:rgba(180,230,180,.55);--text3:rgba(180,230,180,.28);
+  --accent:#44cc44;--danger:#cc3333;--online:#44dd88;
+  --sans:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 10% 20%,rgba(45,122,45,.22) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 80% at 90% 80%,rgba(200,150,12,.1) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 50% at 50% 100%,rgba(45,100,45,.12) 0%,transparent 60%);
+}
+
+/* ══ LOADING ══ */
+#loading{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green3);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ AUTH ══ */
+#auth{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+.auth-card{
+  background:linear-gradient(145deg,var(--bg2),var(--bg3));
+  border:1px solid var(--border2);border-radius:20px;
+  padding:26px 22px;width:100%;max-width:360px;
+  box-shadow:0 24px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
+  position:relative;z-index:1;
+}
+.auth-logo{font-family:var(--display);font-size:28px;font-weight:900;color:var(--gold2);text-align:center;margin-bottom:4px;letter-spacing:-.5px;cursor:pointer;user-select:none}
+.auth-sub{text-align:center;font-size:11px;color:var(--text2);margin-bottom:18px;letter-spacing:.5px}
+.tabs{display:flex;background:var(--surface);border-radius:10px;padding:3px;margin-bottom:16px}
+.tab{flex:1;padding:8px;border:none;background:none;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .2s}
+.tab.on{background:var(--green);color:#fff}
+.f{margin-bottom:10px}
+.f label{display:block;font-size:10px;font-weight:800;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
+.f input,.f select{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:border .2s}
+.f input:focus,.f select:focus{border-color:var(--green3)}
+.f select option{background:var(--bg2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--green),var(--green2));border:none;border-radius:10px;color:#fff;font-family:var(--display);font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px;transition:all .15s;margin-top:4px}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.err{font-size:12px;color:#ff8888;text-align:center;margin-top:6px;min-height:16px}
+.divider{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:11px;color:var(--text3)}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.poker-link{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.3);border-radius:10px;color:var(--gold2);font-size:13px;font-weight:700;text-decoration:none;transition:all .15s}
+.poker-link:hover{background:rgba(200,150,12,.2)}
+
+/* avatar grid */
+.av-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:10px}
+.av-btn{aspect-ratio:1;border-radius:8px;border:2px solid transparent;background:var(--surface);font-size:20px;cursor:pointer;transition:all .15s}
+.av-btn:hover{border-color:var(--green3)}
+.av-btn.sel{border-color:var(--gold);background:rgba(200,150,12,.15)}
+
+/* ══ APP ══ */
+#app{display:none;height:100%;flex-direction:column;position:relative;z-index:1}
+#app.on{display:flex}
+
+/* TOPBAR */
+.topbar{height:50px;display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;z-index:50}
+.logo{font-family:var(--display);font-size:20px;font-weight:900;color:var(--gold2);letter-spacing:-.5px;cursor:pointer;user-select:none;flex-shrink:0}
+.topbar-mid{flex:1;display:flex;align-items:center;gap:6px;overflow:hidden}
+.rpill{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.rpill.on{background:var(--green);border-color:var(--green3);color:#fff}
+.rpill:hover:not(.on){background:var(--surface2);color:var(--text)}
+.topbar-right{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.uc{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:all .15s}
+.uc:hover{background:var(--surface2)}
+.uc-av{font-size:18px;line-height:1}
+.uc-name{font-size:12px;font-weight:700;color:var(--text);max-width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* BODY */
+.body{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* SIDEBAR */
+.sidebar{width:175px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:680px){.sidebar{display:none}}
+.sb-scroll{flex:1;overflow-y:auto;padding:6px 0}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.sb-grp{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 12px 4px}
+.sb-r{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:none;background:none;color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:500;width:100%;text-align:left;cursor:pointer;transition:all .15s}
+.sb-r:hover{background:var(--surface);color:var(--text)}
+.sb-r.on{background:var(--green);color:#fff}
+.sb-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-div{height:1px;background:var(--border);margin:6px 10px}
+.sb-poker{margin:8px;border-radius:9px;background:linear-gradient(135deg,rgba(200,150,12,.18),rgba(200,150,12,.06));border:1px solid rgba(200,150,12,.3)}
+.sb-poker a{display:flex;align-items:center;gap:8px;padding:9px 11px;color:var(--gold2);font-size:12px;font-weight:700;text-decoration:none}
+.sb-out{padding:8px}
+.sb-out button{width:100%;padding:7px;background:rgba(200,50,50,.15);border:1px solid rgba(200,50,50,.3);color:#ff8888;border-radius:8px;cursor:pointer;font-size:12px;font-family:var(--sans)}
+
+/* CHAT WRAP */
+.chat-wrap{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;position:relative}
+
+/* BANNER */
+.banner{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.banner-icon{font-size:20px}
+.banner-info{flex:1;min-width:0}
+.banner-name{font-size:14px;font-weight:800;color:var(--text)}
+.banner-desc{font-size:11px;color:var(--text2)}
+.banner-live{font-size:11px;color:var(--online);font-weight:700;background:rgba(68,221,136,.1);border:1px solid rgba(68,221,136,.25);padding:3px 9px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+
+/* CHAT INSTANCE SWITCHER — shows which domain/instance we're on */
+.instance-bar{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  background:rgba(200,150,12,.05);border-bottom:1px solid rgba(200,150,12,.12);
+  flex-shrink:0;overflow-x:auto;
+}
+.instance-bar::-webkit-scrollbar{height:0}
+.inst-btn{
+  padding:3px 10px;border-radius:14px;font-size:11px;font-weight:700;
+  background:var(--surface);border:1px solid var(--border);color:var(--text3);
+  cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;
+}
+.inst-btn:hover{color:var(--text);border-color:var(--border2)}
+.inst-btn.on{background:rgba(200,150,12,.2);border-color:rgba(200,150,12,.5);color:var(--gold2)}
+.inst-label{font-size:10px;color:var(--text3);font-weight:600;flex-shrink:0}
+
+/* THE IFRAME */
+#chat-frame{flex:1;border:none;width:100%;min-height:0;display:block;background:var(--bg)}
+
+/* CUSTOM INPUT BAR — sits below iframe, sends via postMessage / URL command */
+.custom-input-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  background:var(--bg2);border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.custom-input-wrap{
+  flex:1;display:flex;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:8px 12px;
+  transition:border .2s;
+}
+.custom-input-wrap:focus-within{border-color:var(--green3)}
+.custom-input-wrap textarea{
+  flex:1;background:none;border:none;outline:none;resize:none;
+  color:var(--text);font-family:var(--sans);font-size:14px;
+  min-height:20px;max-height:80px;line-height:1.4;
+}
+.custom-input-wrap textarea::placeholder{color:var(--text3)}
+.eq{display:flex;gap:2px}
+.eq button{background:none;border:none;font-size:17px;cursor:pointer;padding:1px;opacity:.55;transition:opacity .15s;line-height:1}
+.eq button:hover{opacity:1}
+.send{width:38px;height:38px;border-radius:10px;background:var(--green);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.send:hover{background:var(--green2);transform:scale(1.05)}
+.send:active{transform:scale(.95)}
+
+/* NAME TAG PREVIEW */
+.tag-preview{
+  font-size:10px;color:var(--text3);padding:0 12px 4px;
+  flex-shrink:0;display:flex;align-items:center;gap:6px;
+}
+.tag-preview-name{font-weight:700;color:var(--green3)}
+
+/* MOBILE NAV */
+.mnav{display:none;background:var(--bg2);border-top:1px solid var(--border);padding:5px 4px;flex-shrink:0}
+@media(max-width:680px){
+  .mnav{display:flex;justify-content:space-around}
+  .topbar-mid{display:none}
+}
+.mn-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--text3);cursor:pointer;font-family:var(--sans);font-size:10px;font-weight:700;padding:5px 10px;border-radius:8px;transition:all .15s}
+.mn-btn.on{color:var(--accent)}
+.mn-icon{font-size:19px}
+
+/* OVERLAYS */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.ov.on{display:flex}
+.ov-card{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:22px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto}
+.ov-card h3{font-family:var(--display);font-size:18px;font-weight:800;color:var(--gold2);margin-bottom:14px}
+.ov-card::-webkit-scrollbar{width:3px}
+.ov-card::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ROOMS DRAWER */
+.drawer{position:fixed;inset:0;z-index:400;background:var(--bg2);display:none;flex-direction:column}
+.drawer.on{display:flex}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.drawer-title{font-family:var(--display);font-size:18px;font-weight:800;color:var(--gold2)}
+.drawer-close{background:var(--surface);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.drawer-body{flex:1;overflow-y:auto;padding:10px}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:9999;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5);white-space:nowrap}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:900;color:var(--gold2)">🐒 BritChat</div>
+  <div class="spin"></div>
+</div>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-card">
+    <div class="auth-logo" id="logo-tap">🐒 BritChat</div>
+    <div class="auth-sub">🇬🇧 Free UK Chat · Same login as Poker Chimps 🎰</div>
+    <div class="tabs">
+      <button class="tab on" id="ti" onclick="swTab('in')">Sign In</button>
+      <button class="tab" id="tu" onclick="swTab('up')">Register</button>
+    </div>
+    <div id="fi">
+      <div class="f"><label>Username</label><input id="su" placeholder="your_username" autocapitalize="none" autocomplete="username"></div>
+      <div class="f"><label>Password</label><input id="sp" type="password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doIn()"></div>
+      <button class="btn" onclick="doIn()">Sign In →</button>
+      <div class="err" id="se"></div>
+    </div>
+    <div id="fu" style="display:none">
+      <div class="f"><label>Username</label><input id="ru" placeholder="choose_username" autocapitalize="none"></div>
+      <div class="f"><label>Password</label><input id="rp" type="password" placeholder="min 4 characters"></div>
+      <div class="f"><label>Confirm Password</label><input id="rp2" type="password" placeholder="repeat password" onkeydown="if(event.key==='Enter')doUp()"></div>
+      <div class="frow">
+        <div class="f"><label>Age</label><input id="ra" type="number" placeholder="25" min="13" max="99"></div>
+        <div class="f"><label>Gender</label>
+          <select id="rs"><option value="">Prefer not</option><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+      </div>
+      <div class="f"><label>Location</label><input id="rl" placeholder="London, UK" maxlength="30"></div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:800;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px">Your Avatar</div>
+        <div class="av-grid" id="av-g"></div>
+      </div>
+      <button class="btn" onclick="doUp()">Create Account →</button>
+      <div class="err" id="re"></div>
+    </div>
+    <div class="divider">or</div>
+    <a class="poker-link" href="https://pokerchimps.com/poker.html">🎰 Play Poker Chimps — same login!</a>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo" onclick="toggleDrawer()">🐒 BritChat</div>
+    <div class="topbar-mid" id="pills"></div>
+    <div class="topbar-right">
+      <div class="uc" onclick="openProfile()">
+        <span class="uc-av" id="uc-av">🐒</span>
+        <span class="uc-name" id="uc-nm">Me</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-scroll" id="sb-list"></div>
+      <div class="sb-div"></div>
+      <div class="sb-poker"><a href="https://pokerchimps.com/poker.html">🎰<div><div style="font-size:12px">Poker Chimps</div><div style="font-size:10px;opacity:.5;font-weight:400">Same login · Play now</div></div></a></div>
+      <div class="sb-out"><button onclick="doOut()">⏻ Sign Out</button></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-wrap">
+      <div class="banner">
+        <div class="banner-icon" id="bn-icon">💬</div>
+        <div class="banner-info">
+          <div class="banner-name" id="bn-name">Main Chat</div>
+          <div class="banner-desc" id="bn-desc">Live chat — real people worldwide</div>
+        </div>
+        <div class="banner-live">🟢 Live</div>
+      </div>
+
+      <!-- INSTANCE SWITCHER — try all 3 domains -->
+      <div class="instance-bar">
+        <div class="inst-label">Server:</div>
+        <button class="inst-btn on" id="inst-0" onclick="switchInstance(0)">addachat.com</button>
+        <button class="inst-btn" id="inst-1" onclick="switchInstance(1)">poo.com</button>
+        <button class="inst-btn" id="inst-2" onclick="switchInstance(2)">htmlchat.org</button>
+        <div style="flex:1"></div>
+        <div style="font-size:10px;color:var(--text3)" id="inst-status">Connected</div>
+      </div>
+
+      <!-- ADDACHAT / HTMLCHAT IFRAME — full screen -->
+      <iframe id="chat-frame"
+        src=""
+        allow="camera;microphone"
+        scrolling="yes"
+        title="BritChat Live Room">
+      </iframe>
+
+    </div>
+  </div><!-- /body -->
+
+  <!-- MOBILE NAV -->
+  <div class="mnav">
+    <button class="mn-btn on" id="mn-chat" onclick="mn('chat')"><span class="mn-icon">💬</span>Chat</button>
+    <button class="mn-btn" id="mn-rooms" onclick="toggleDrawer()"><span class="mn-icon">📋</span>Rooms</button>
+    <button class="mn-btn" onclick="window.open('https://pokerchimps.com/poker.html','_blank')"><span class="mn-icon">🎰</span>Poker</button>
+    <button class="mn-btn" onclick="openProfile()"><span class="mn-icon" id="mn-av">🐒</span>Me</button>
+  </div>
+</div><!-- /app -->
+
+<!-- ROOMS DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-hdr">
+    <div class="drawer-title">📋 Chat Rooms</div>
+    <button class="drawer-close" onclick="toggleDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="dr-list"></div>
+</div>
+
+<!-- PROFILE OVERLAY -->
+<div class="ov" id="prof-ov" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="ov-card">
+    <h3>👤 My Profile</h3>
+    <div id="prof-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   BRITCHAT v3 — Deep AddaChat / HTMLChat Integration
+   
+   WHAT WE DO WITH THE URL PARAMETERS:
+   ─────────────────────────────────────
+   name=    → User's BritChat display name (auto-filled from login)
+   room=    → Chat room name (our BritChat rooms)
+   bg=      → Background colour (matches our dark green theme)
+   fg=      → Foreground/text colour
+   bgs=on   → Enable background setting
+   sidebar= → on/off (we hide it for cleaner look, use our own)
+   format=  → on/off (HTML tags in messages)
+   images=  → on/off/small
+   instance=→ Custom private chat instance name (our BritChat namespace)
+   
+   THREE DOMAINS — all same chat engine:
+   chat.addachat.com  (main - most users)
+   chat.poo.com       (same engine, different domain)
+   chat.htmlchat.org  (same engine, different domain)
+   
+   HTML TAG FORMAT (for custom name styling):
+   We send messages with HTML tags so the user's name
+   appears in our BritChat brand style (gold colour etc.)
+══════════════════════════════════════════════════════ */
+
+const FB = 'https://britchat-6faa5-default-rtdb.firebaseio.com';
+
+/* The three domains — all run the same chat engine */
+const DOMAINS = [
+  'chat.addachat.com',
+  'chat.poo.com',
+  'chat.htmlchat.org',
+];
+let currentDomain = 0;
+
+/* 
+  ROOMS — each has:
+  - id: our internal id
+  - name: display name
+  - icon: emoji
+  - desc: description  
+  - room: the AddaChat room parameter (joins this room on their server)
+  - instance: optional — creates a private BritChat sub-instance
+  - group: sidebar group label
+*/
+const ROOMS = [
+  // Public AddaChat rooms — real people already here
+  {id:'main',       name:'Main Chat',     icon:'💬', desc:'The main public room — real people worldwide',      room:'main',        instance:'',          group:'🔴 Live Public'},
+  {id:'muscle',     name:'Muscle Chat',   icon:'💪', desc:'Fitness & gym talk with real users',               room:'musclechat',  instance:'',          group:'🔴 Live Public'},
+  {id:'eminemfan',  name:'Music Fan',     icon:'🎵', desc:'Music lovers — active public room',                room:'eminemfanchat',instance:'',         group:'🔴 Live Public'},
+  // BritChat private instance rooms — our namespace
+  {id:'brituk',     name:'BritChat UK',   icon:'🇬🇧', desc:'Main UK room',                                    room:'general',     instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britpub',    name:'The Pub',       icon:'🍺', desc:'Pull up a stool',                                  room:'pub',         instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britsport',  name:'Sport',         icon:'⚽', desc:'Football, cricket & more',                        room:'sport',       instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britpoker',  name:'Poker Lounge',  icon:'🎰', desc:'Poker strategy & banter',                         room:'poker',       instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britdating', name:'Dating & Chat', icon:'💞', desc:'Meet new people',                                  room:'dating',      instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britnews',   name:'UK News',       icon:'📰', desc:'News & current affairs',                          room:'news',        instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britmusic',  name:'Music',         icon:'🎵', desc:'British & world music',                           room:'music',       instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'brit30s',    name:'30s & Over',    icon:'🎯', desc:'Chat for the grown-ups',                          room:'over30s',     instance:'britchat',  group:'🇬🇧 BritChat'},
+  {id:'britgaming', name:'Gaming',        icon:'🎮', desc:'Console, PC & mobile games',                     room:'gaming',      instance:'britchat',  group:'🇬🇧 BritChat'},
+];
+
+const AVEMOJIS = ['🐒','🦍','🦧','🐵','😎','🤠','🧐','😏','👑','💎','🎩','🃏','🌟','🔥','💀','👾','🦊','🐻','🎭','🤖','🏋️','🧙','🦁','🐯','🐺'];
+
+let me = null;
+let curRoom = 'main';
+
+/* ══ INIT ══ */
+window.onload = () => {
+  buildAvGrid('av-g');
+  const sess = localStorage.getItem('nt_session');
+  if(sess){
+    let ud = getLocal(sess);
+    if(ud){ me=ud; launch(); return; }
+    // Firebase fallback
+    fetch(FB+'/pc_users/'+sess+'.json').then(r=>r.json()).then(d=>{
+      if(d&&(d.username||d.name)){
+        me=d;
+        try{localStorage.setItem('pc_user_'+sess,JSON.stringify(d));}catch(e){}
+        launch();
+      } else showAuth();
+    }).catch(()=>showAuth());
+    return;
+  }
+  showAuth();
+};
+
+function getLocal(u){
+  try{ const r=localStorage.getItem('pc_user_'+u); if(r)return JSON.parse(r); }catch(e){}
+  try{ const a=JSON.parse(localStorage.getItem('nt_users')||'{}'); if(a[u])return a[u]; }catch(e){}
+  return null;
+}
+function showAuth(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth').style.display='flex';
+}
+function buildAvGrid(id){
+  const g=document.getElementById(id); if(!g||g.children.length)return;
+  AVEMOJIS.forEach((a,i)=>{
+    const b=document.createElement('button');b.className='av-btn'+(i===0?' sel':'');b.textContent=a;b.type='button';
+    b.onclick=()=>{g.querySelectorAll('.av-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
+    g.appendChild(b);
+  });
+}
+
+/* ══ AUTH ══ */
+function swTab(t){
+  document.getElementById('ti').classList.toggle('on',t==='in');
+  document.getElementById('tu').classList.toggle('on',t==='up');
+  document.getElementById('fi').style.display=t==='in'?'block':'none';
+  document.getElementById('fu').style.display=t==='up'?'block':'none';
+}
+function doIn(){
+  const u=document.getElementById('su').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const p=document.getElementById('sp').value;
+  const err=document.getElementById('se');
+  if(!u||!p){err.textContent='Please fill in all fields';return;}
+  let ud=getLocal(u);
+  if(ud){
+    const h=btoa(unescape(encodeURIComponent(p)));
+    if(ud.password===h||ud.password===btoa(p)||ud.password===p){
+      me=ud;localStorage.setItem('nt_session',u);
+      document.getElementById('auth').style.display='none';launch();
+    }else{err.textContent='Incorrect password';}
+    return;
+  }
+  err.textContent='Checking…';
+  fetch(FB+'/pc_users/'+u+'.json').then(r=>r.json()).then(d=>{
+    if(!d){err.textContent='Username not found';return;}
+    const h=btoa(unescape(encodeURIComponent(p)));
+    if(d.password===h||d.password===btoa(p)){
+      me=d;localStorage.setItem('pc_user_'+u,JSON.stringify(d));localStorage.setItem('nt_session',u);
+      document.getElementById('auth').style.display='none';launch();
+    }else{err.textContent='Incorrect password';}
+  }).catch(()=>err.textContent='Connection error');
+}
+function doUp(){
+  const u=document.getElementById('ru').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const p=document.getElementById('rp').value;
+  const p2=document.getElementById('rp2').value;
+  const age=document.getElementById('ra').value||'';
+  const sex=document.getElementById('rs').value||'';
+  const loc=document.getElementById('rl').value.trim()||'';
+  const av=document.querySelector('#av-g .av-btn.sel')?.textContent||'🐒';
+  const err=document.getElementById('re');
+  if(!u||u.length<2){err.textContent='Username: min 2 characters';return;}
+  if(!/^[a-z0-9_]+$/.test(u)){err.textContent='Letters, numbers and _ only';return;}
+  if(!p||p.length<4){err.textContent='Password: min 4 characters';return;}
+  if(p!==p2){err.textContent='Passwords do not match';return;}
+  if(localStorage.getItem('pc_user_'+u)){err.textContent='Username taken';return;}
+  const dn=u.split('_').map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
+  const ud={username:u,name:dn,password:btoa(unescape(encodeURIComponent(p))),avatar:av,color:'#c8960c',chips:10000,joinedAt:Date.now(),age,sex,location:loc,profile:{wins:0,losses:0,handsPlayed:0,biggestWin:0,totalWon:0},friends:[],friendRequests:[]};
+  localStorage.setItem('pc_user_'+u,JSON.stringify(ud));
+  try{const a=JSON.parse(localStorage.getItem('nt_users')||'{}');a[u]=ud;localStorage.setItem('nt_users',JSON.stringify(a));}catch(e){}
+  fetch(FB+'/pc_users/'+u+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(ud)}).catch(()=>{});
+  localStorage.setItem('nt_session',u);me=ud;
+  document.getElementById('auth').style.display='none';launch();
+}
+function doOut(){
+  localStorage.removeItem('nt_session');me=null;
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('auth').style.display='flex';
+  document.getElementById('chat-frame').src='';
+  swTab('in');
+}
+
+/* ══ LAUNCH APP ══ */
+function launch(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('auth').style.display='none';
+  document.getElementById('app').classList.add('on');
+  updateChip();buildRooms();joinRoom('main');
+  // Init all the magic features
+  setTimeout(initMagic, 500);
+}
+function updateChip(){
+  if(!me)return;
+  document.getElementById('uc-av').textContent=me.avatar||'🐒';
+  document.getElementById('uc-nm').textContent=me.name||me.username||'Me';
+  document.getElementById('mn-av').textContent=me.avatar||'🐒';
+}
+
+/* ══ ROOMS ══ */
+function buildRooms(){buildSidebar();buildPills();buildDrawer();}
+
+function buildSidebar(){
+  const el=document.getElementById('sb-list');el.innerHTML='';
+  const groups={};
+  ROOMS.forEach(r=>{if(!groups[r.group])groups[r.group]=[];groups[r.group].push(r);});
+  Object.entries(groups).forEach(([g,rooms])=>{
+    const t=document.createElement('div');t.className='sb-grp';t.textContent=g;el.appendChild(t);
+    rooms.forEach(r=>{
+      const b=document.createElement('button');
+      b.className='sb-r'+(r.id===curRoom?' on':'');
+      b.id='sbr-'+r.id;
+      b.innerHTML=`<span class="sb-icon">${r.icon}</span><span class="sb-name">${r.name}</span>`;
+      b.onclick=()=>joinRoom(r.id);
+      el.appendChild(b);
+    });
+    const d=document.createElement('div');d.style.cssText='height:1px;background:var(--border);margin:5px 10px';el.appendChild(d);
+  });
+}
+
+function buildPills(){
+  const el=document.getElementById('pills');
+  el.innerHTML=ROOMS.slice(0,5).map(r=>`<div class="rpill${r.id===curRoom?' on':''}" id="pil-${r.id}" onclick="joinRoom('${r.id}')">${r.icon} ${r.name}</div>`).join('');
+}
+
+function buildDrawer(){
+  const el=document.getElementById('dr-list');el.innerHTML='';
+  const groups={};
+  ROOMS.forEach(r=>{if(!groups[r.group])groups[r.group]=[];groups[r.group].push(r);});
+  Object.entries(groups).forEach(([g,rooms])=>{
+    const t=document.createElement('div');t.style.cssText='font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:12px 4px 6px';t.textContent=g;el.appendChild(t);
+    rooms.forEach(r=>{
+      const b=document.createElement('div');
+      b.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;transition:background .15s';
+      b.innerHTML=`<div style="font-size:22px;width:30px;text-align:center">${r.icon}</div><div><div style="font-size:14px;font-weight:700;color:var(--text)">${r.name}</div><div style="font-size:11px;color:var(--text2)">${r.desc}</div></div>`;
+      b.onmouseover=()=>b.style.background='var(--surface)';b.onmouseout=()=>b.style.background='';
+      b.onclick=()=>{joinRoom(r.id);toggleDrawer();};
+      el.appendChild(b);
+    });
+  });
+}
+
+/* ══ JOIN ROOM — builds the AddaChat URL with all parameters ══ */
+function joinRoom(id){
+  const r=ROOMS.find(x=>x.id===id)||ROOMS[0];
+  curRoom=id;
+
+  // Update UI
+  document.getElementById('bn-icon').textContent=r.icon;
+  document.getElementById('bn-name').textContent=r.name;
+  document.getElementById('bn-desc').textContent=r.desc;
+  document.querySelectorAll('.sb-r').forEach(b=>b.classList.toggle('on',b.id==='sbr-'+id));
+  document.querySelectorAll('.rpill').forEach(b=>b.classList.toggle('on',b.id==='pil-'+id));
+
+  loadFrame(r);
+}
+
+function loadFrame(r){
+  if(!me)return;
+  const domain = DOMAINS[currentDomain];
+
+  /*
+    FULL PARAMETER EXPLANATION:
+    
+    name=     User's display name from BritChat login — pre-fills their name in chat
+    room=     Which room to join
+    instance= If set, creates a private namespace (our BritChat rooms)
+              If empty, joins the shared public instance (real people)
+    bg=       Background hex color — we match our dark green #080f08
+    bgs=on    Activates the bg parameter
+    sidebar=  on/off — we keep it on so users can see room list & user list inside chat
+    format=   on — enables HTML in messages (lets us send styled name tags)
+    images=   on — allows image sharing
+    fg=       Foreground color for chat text (light green)
+  */
+
+  const name  = encodeURIComponent(me.name||me.username||'BritChatUser');
+  const room  = encodeURIComponent(r.room||'main');
+  const inst  = r.instance ? encodeURIComponent(r.instance) : '';
+
+  let url = `https://${domain}/?`
+    + `name=${name}`
+    + `&room=${room}`
+    + `&bgs=on`
+    + `&bg=080f08`
+    + `&sidebar=on`
+    + `&format=on`
+    + `&images=on`;
+
+  // Add instance parameter for BritChat private rooms
+  if(inst) url += `&instance=${inst}`;
+
+  document.getElementById('chat-frame').src = url;
+  document.getElementById('inst-status').textContent = '● Connected via '+domain;
+}
+
+/* ══ INSTANCE SWITCHER ══
+   Switch between the 3 domains — all same chat data,
+   useful if one is slow or down
+*/
+function switchInstance(i){
+  currentDomain=i;
+  document.querySelectorAll('.inst-btn').forEach((b,j)=>b.classList.toggle('on',j===i));
+  document.getElementById('inst-status').textContent='Switching…';
+  const r=ROOMS.find(x=>x.id===curRoom)||ROOMS[0];
+  loadFrame(r);
+  showToast('Switched to '+DOMAINS[i]);
+}
+
+/* ══ PROFILE ══ */
+function openProfile(){
+  renderProfile();
+  document.getElementById('prof-ov').classList.add('on');
+}
+function renderProfile(){
+  const el=document.getElementById('prof-body');if(!me||!el)return;
+  const s=me.profile||{};
+  const wr=s.handsPlayed>0?Math.round((s.wins||0)/s.handsPlayed*100):0;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div style="width:58px;height:58px;border-radius:50%;background:var(--surface2);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer" onclick="openAvPicker()">
+        ${me.avatar||'🐒'}
+      </div>
+      <div style="flex:1">
+        <button onclick="openEditProf()" style="display:block;background:none;border:none;padding:0;cursor:pointer;margin-bottom:3px">
+          <span style="font-size:10px;font-weight:700;color:var(--green3);text-decoration:underline;text-underline-offset:2px">✏️ EDIT PROFILE</span>
+        </button>
+        <div style="font-size:19px;font-weight:900;color:var(--gold2)">${me.name||me.username}</div>
+        <div style="font-size:11px;color:var(--text2)">${[me.age,me.sex,me.location].filter(Boolean).join(' · ')||'No details set'}</div>
+      </div>
+    </div>
+    <div style="background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.25);border-radius:11px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:10px;color:var(--text2);margin-bottom:2px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Poker Chips</div>
+        <div style="font-size:20px;font-weight:900;color:var(--gold2)">🪙${(me.chips||10000).toLocaleString()}</div>
+      </div>
+      <a href="https://pokerchimps.com/poker.html" style="background:rgba(200,150,12,.2);border:1px solid rgba(200,150,12,.4);color:var(--gold2);padding:8px 14px;border-radius:9px;font-size:13px;font-weight:800;text-decoration:none">Play 🎰</a>
+    </div>
+    ${s.handsPlayed?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:var(--surface);border-radius:9px;padding:9px;text-align:center"><div style="font-size:17px;font-weight:900;color:var(--accent)">${s.wins||0}</div><div style="font-size:10px;color:var(--text2)">Wins</div></div>
+      <div style="background:var(--surface);border-radius:9px;padding:9px;text-align:center"><div style="font-size:17px;font-weight:900">${s.handsPlayed}</div><div style="font-size:10px;color:var(--text2)">Hands</div></div>
+      <div style="background:var(--surface);border-radius:9px;padding:9px;text-align:center"><div style="font-size:17px;font-weight:900;color:var(--gold2)">${wr}%</div><div style="font-size:10px;color:var(--text2)">Win%</div></div>
+    </div>`:''}
+    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Your Chat Name Tag</div>
+    <div style="background:var(--surface);border-radius:9px;padding:10px 12px;margin-bottom:12px;font-size:13px">
+      In chat you appear as: <b style="color:var(--gold2)">${me.name||me.username}</b><br>
+      <span style="font-size:11px;color:var(--text2)">Your avatar (${me.avatar||'🐒'}) shows in BritChat. Your name auto-fills in every room.</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openAvPicker()" style="flex:1;padding:9px;background:rgba(200,150,12,.12);border:1px solid rgba(200,150,12,.3);color:var(--gold2);border-radius:9px;cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600">🎨 Avatar</button>
+      <button onclick="openEditProf()" style="flex:1;padding:9px;background:rgba(80,200,80,.08);border:1px solid rgba(80,200,80,.2);color:var(--accent);border-radius:9px;cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600">✏️ Edit</button>
+      <button onclick="doOut()" style="flex:1;padding:9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.3);color:#ff8888;border-radius:9px;cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600">Sign Out</button>
+    </div>
+    <a href="https://pokerchimps.com/poker.html" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.25);border-radius:10px;color:var(--gold2);font-size:13px;font-weight:700;text-decoration:none;margin-top:8px">🎰 Open Poker Chimps</a>`;
+}
+
+/* ══ EDIT PROFILE ══ */
+function openEditProf(){
+  document.getElementById('prof-ov').classList.remove('on');
+  const ov=document.createElement('div');ov.className='ov on';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="ov-card"><h3>✏️ Edit Profile</h3>
+    <div class="f"><label>Display Name</label><input id="en" value="${me.name||''}" maxlength="25"></div>
+    <div class="frow">
+      <div class="f"><label>Age</label><input id="ea" type="number" value="${me.age||''}" min="13" max="99"></div>
+      <div class="f"><label>Gender</label><select id="es"><option value="" ${!me.sex?'selected':''}>Prefer not</option><option ${me.sex==='Male'?'selected':''}>Male</option><option ${me.sex==='Female'?'selected':''}>Female</option><option ${me.sex==='Other'?'selected':''}>Other</option></select></div>
+    </div>
+    <div class="f"><label>Location</label><input id="el" value="${me.location||''}" placeholder="London, UK" maxlength="30"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button onclick="saveProf()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--green),var(--green2));border:none;color:#fff;border-radius:9px;cursor:pointer;font-family:var(--display);font-size:14px;font-weight:800">💾 Save</button>
+      <button onclick="this.closest('.ov').remove()" style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:9px;cursor:pointer;font-family:var(--sans)">Cancel</button>
+    </div>
+    <div id="ep-msg" style="font-size:11px;color:var(--accent);text-align:center;margin-top:8px;min-height:16px"></div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function saveProf(){
+  me.name=document.getElementById('en')?.value.trim()||me.name;
+  me.age=document.getElementById('ea')?.value||'';
+  me.sex=document.getElementById('es')?.value||'';
+  me.location=document.getElementById('el')?.value.trim()||'';
+  try{localStorage.setItem('pc_user_'+me.username,JSON.stringify(me));}catch(e){}
+  fetch(FB+'/pc_users/'+me.username+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:me.name,age:me.age,sex:me.sex,location:me.location})}).catch(()=>{});
+  document.querySelector('.ov.on:last-child')?.remove();
+  updateChip();showToast('✅ Profile saved!');
+  // Reload chat with updated name
+  joinRoom(curRoom);
+}
+
+/* ══ AVATAR PICKER ══ */
+function openAvPicker(){
+  document.getElementById('prof-ov').classList.remove('on');
+  const ov=document.createElement('div');ov.className='ov on';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  const avH=AVEMOJIS.map(a=>`<button type="button" onclick="setAv('${a}')" style="aspect-ratio:1;border-radius:9px;border:2px solid ${me.avatar===a?'var(--gold)':'transparent'};background:var(--surface);font-size:24px;cursor:pointer;transition:all .15s;width:100%">${a}</button>`).join('');
+  ov.innerHTML=`<div class="ov-card"><h3>🎨 Choose Avatar</h3>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px">${avH}</div>
+    <label style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--surface);border:1px dashed var(--border2);border-radius:9px;cursor:pointer;margin-bottom:10px">
+      <span style="font-size:20px">📷</span><span style="font-size:13px;color:var(--text2)">Upload your photo</span>
+      <input type="file" accept="image/*" style="display:none" onchange="uploadPic(event)">
+    </label>
+    <button onclick="this.closest('.ov').remove()" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:9px;cursor:pointer;font-family:var(--sans)">Close</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function setAv(a){
+  me.avatar=a;
+  try{localStorage.setItem('pc_user_'+me.username,JSON.stringify(me));}catch(e){}
+  fetch(FB+'/pc_users/'+me.username+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({avatar:a})}).catch(()=>{});
+  document.querySelector('.ov.on:last-child')?.remove();
+  updateChip();showToast('Avatar updated!');
+}
+function uploadPic(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const d=ev.target.result;if(d.length>150000){showToast('Photo too large — max ~100KB');return;}
+    me.avatar=d;
+    try{localStorage.setItem('pc_user_'+me.username,JSON.stringify(me));}catch(e){}
+    document.querySelector('.ov.on:last-child')?.remove();
+    updateChip();showToast('Photo set! 📷');
+  };r.readAsDataURL(f);
+}
+
+/* ══ MOBILE ══ */
+function mn(t){document.querySelectorAll('.mn-btn').forEach(b=>b.classList.remove('on'));document.getElementById('mn-'+t)?.classList.add('on');}
+let drOpen=false;
+function toggleDrawer(){drOpen=!drOpen;document.getElementById('drawer').classList.toggle('on',drOpen);}
+
+/* ══ UTILS ══ */
+function showToast(m,d=2500){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',d);}
+
+/* ══ ADMIN ══ */
+let aTap=0,aTmr=null;
+document.getElementById('logo-tap')?.addEventListener('click',()=>{
+  aTap++;clearTimeout(aTmr);aTmr=setTimeout(()=>aTap=0,800);
+  if(aTap>=3){aTap=0;const pw=prompt('🛡️ Admin password:');if(pw==='Poker ChimpsAdmin2025!')adminPanel();else if(pw!==null)alert('Wrong password');}
+});
+function adminPanel(){
+  const ov=document.createElement('div');ov.className='ov on';ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="ov-card" style="max-width:460px"><h3>🛡️ Admin</h3><div id="ad" style="color:var(--text2);font-size:13px">Loading…</div><button onclick="this.closest('.ov').remove()" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:9px;cursor:pointer;font-family:var(--sans);margin-top:12px">Close</button></div>`;
+  document.body.appendChild(ov);
+  fetch(FB+'/poker_chips.json').then(r=>r.json()).then(d=>{
+    const ps=d?Object.entries(d).filter(([k])=>k.endsWith('_profile')).map(([,v])=>v).filter(Boolean).sort((a,b)=>(b.chips||0)-(a.chips||0)):[];
+    const ms=d?Object.entries(d).filter(([k])=>k==='admin_messages').flatMap(([,v])=>Object.values(v||{})):[];
+    document.getElementById('ad').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--surface);border-radius:9px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--gold2)">${ps.length}</div><div style="font-size:10px;color:var(--text2)">Players</div></div>
+        <div style="background:var(--surface);border-radius:9px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--accent)">${ps.reduce((s,p)=>s+(p.handsPlayed||0),0)}</div><div style="font-size:10px;color:var(--text2)">Hands</div></div>
+        <div style="background:var(--surface);border-radius:9px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:900;color:var(--gold2)">🪙${(ps.reduce((s,p)=>s+(p.chips||0),0)/1000).toFixed(0)}k</div><div style="font-size:10px;color:var(--text2)">Chips</div></div>
+      </div>
+      <div style="font-weight:800;color:var(--gold2);margin-bottom:8px;font-size:14px">🏆 Top Players</div>
+      ${ps.slice(0,10).map((p,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)"><div style="color:var(--text3);font-size:11px;width:16px">${i+1}</div><div style="font-size:16px">${p.avatar||p.av||'🎰'}</div><div style="flex:1;font-weight:700;font-size:13px">${p.name||'?'}</div><div style="color:var(--gold2);font-size:12px">🪙${(p.chips||0).toLocaleString()}</div></div>`).join('')}
+      ${ms.length?`<div style="font-weight:800;color:var(--gold2);margin:12px 0 8px;font-size:14px">📬 Messages (${ms.length})</div>`+ms.slice(0,5).map(m=>`<div style="background:var(--surface);border-radius:8px;padding:10px;margin-bottom:6px"><div style="font-weight:700;color:var(--gold2)">${m.from} — ${m.subject||''}</div><div style="font-size:12px;color:var(--text);margin-top:4px">${m.body||''}</div></div>`).join(''):''}`;
+  }).catch(()=>document.getElementById('ad').textContent='Could not load data');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   🧙 BRITCHAT MAGIC ENGINE
+   
+   FEATURES:
+   1. Random emoji avatars for ALL users (ours + AddaChat visitors)
+   2. AI-powered bot personalities (Claude API)
+   3. iframe message listener for live reactions
+   4. Custom HTML name tags with gold styling
+   5. Bot army using hidden iframes
+   6. Activity feed showing what's happening across rooms
+══════════════════════════════════════════════════════════════ */
+
+/* ── 1. EMOJI AVATAR SYSTEM ──────────────────────────────── */
+
+// Pool of emojis to assign randomly to unknown AddaChat users
+const EMOJI_POOL = [
+  '🦊','🐯','🦁','🐻','🐼','🦝','🦨','🦡','🦦','🦥',
+  '🐺','🦮','🐕','🦴','🐱','🐭','🐹','🐰','🐸','🐨',
+  '🦅','🦆','🦉','🦚','🦜','🐦','🌊','⚡','🔥','🌙',
+  '🏴‍☠️','👾','🤖','🎭','🎩','💀','👑','💎','🌟','🎯'
+];
+
+// Assign a consistent emoji to any username (same name = same emoji)
+function getEmojiForName(name) {
+  if(!name) return '👤';
+  // Hash the name to get consistent emoji
+  let hash = 0;
+  for(let i=0;i<name.length;i++) hash = ((hash<<5)-hash)+name.charCodeAt(i);
+  return EMOJI_POOL[Math.abs(hash) % EMOJI_POOL.length];
+}
+
+// Build the display name for AddaChat iframe
+// BritChat users: "[their avatar] [their name]" e.g. "🐒 DrunkyJoker"  
+// Unknown users: get random emoji based on name hash
+function buildChatName(user) {
+  if(!user) return getEmojiForName('guest')+' Guest';
+  const av = user.avatar || getEmojiForName(user.name||user.username||'');
+  const name = user.name || user.username || 'Guest';
+  // Strip emoji from avatar if it's a data URL (photo) — just use default
+  const isPhoto = av && av.startsWith('data:');
+  const prefix = isPhoto ? getEmojiForName(name) : av;
+  return prefix + ' ' + name;
+}
+
+/* ── 2. HTML NAME TAG BUILDER ────────────────────────────── */
+// AddaChat supports HTML in messages when format=on
+// We build a styled HTML name tag for our users
+// $n$ is replaced with the username inside AddaChat
+
+function buildHTMLTag(user) {
+  if(!user) return '';
+  const av = user.avatar && !user.avatar.startsWith('data:') ? user.avatar : getEmojiForName(user.name||'');
+  const name = user.name || user.username || 'Guest';
+  const colour = user.color || '#f0c060';
+  // This HTML tag gets injected via the name parameter
+  // It styles the username label that appears before each message
+  return `<span style="background:linear-gradient(135deg,#162316,#0d180d);border:1px solid rgba(80,180,60,.4);border-radius:6px;padding:1px 7px;font-family:DM Sans,sans-serif;font-weight:800;color:${colour};font-size:13px">${av} ${name}</span>`;
+}
+
+/* ── 3. BOT SYSTEM ───────────────────────────────────────── */
+
+const BOTS = [
+  { name:'ChimpBot 🐒',    av:'🐒', persona:'friendly UK chat host, welcoming, uses British slang', color:'#44cc44' },
+  { name:'PokerPete 🎰',   av:'🎰', persona:'poker enthusiast sharing tips and hand analysis',      color:'#f0c060' },
+  { name:'BritBanter 🇬🇧', av:'🇬🇧', persona:'funny British person, loves banter and football',    color:'#3399ff' },
+  { name:'LuckyLass 🍀',   av:'🍀', persona:'upbeat Irish girl who loves craic and gossip',         color:'#ff99cc' },
+  { name:'TheDealer 🃏',   av:'🃏', persona:'mysterious poker dealer sharing wisdom',               color:'#cc88ff' },
+];
+
+let botActive = false;
+let botTimers = [];
+let botIframes = {}; // hidden iframes for each bot
+
+// Bot message templates (sent without AI for instant response)
+const BOT_GREETINGS = [
+  'Anyone up for a game of poker? 🎰',
+  'Welcome to BritChat! Good to see you here 👋',
+  'Nice to meet you all! What\'s everyone chatting about?',
+  'Alright lads, how\'s everyone doing today? 🇬🇧',
+  'Just had the most incredible hand of poker on PokerChimps... AA cracked by 72o! 😭',
+  'Anyone watching the football tonight? ⚽',
+  'Good evening! Hope everyone is having a brilliant day 🌟',
+  'Just popped in for a brew and a chat ☕',
+];
+const BOT_POKER_TIPS = [
+  '💡 Poker tip: Position is power. Always play more hands from the button.',
+  '💡 Pot odds: If the pot is £100 and it costs £20 to call, you need 17% equity.',
+  '💡 Continuation betting: Bet the flop when you\'re the pre-flop aggressor.',
+  '💡 Fold equity matters — bluffing works when your opponent can fold.',
+  '🎰 Come try PokerChimps.com — free Texas Hold\'em with real players!',
+];
+const BOT_BANTER = [
+  'This is better than ITV2 tbh 😂',
+  'Right, who wants a cuppa? ☕',
+  'Blimey, it\'s buzzing in here tonight!',
+  'Anyone else think it\'s mad how fast time flies when you\'re chatting?',
+  'I\'ve been on here since lunch and completely lost track of time lol',
+];
+
+// Send a bot message via hidden iframe
+// We reload a hidden iframe with the bot's name and a pre-typed message
+// using the AddaChat name= parameter on the BritChat private instance
+function botSendMessage(bot, room, message) {
+  const botKey = 'bot_' + bot.name.replace(/[\s]+/g,'_');
+  let frame = document.getElementById(botKey);
+  if(!frame){
+    frame = document.createElement('iframe');
+    frame.id = botKey;
+    frame.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;top:-999px;left:-999px';
+    frame.allow = 'camera;microphone';
+    document.body.appendChild(frame);
+    botIframes[botKey] = frame;
+  }
+  
+  const botName = encodeURIComponent(bot.av + ' ' + bot.name.split(' ')[0]);
+  const roomEnc = encodeURIComponent(room);
+  
+  // Open the BritChat private instance as this bot
+  frame.src = `https://chat.addachat.com/?name=${botName}&room=${roomEnc}&instance=britchat&bg=080f08&bgs=on&format=on&sidebar=on`;
+  
+  // After the iframe loads, the bot's name is registered
+  // We can't send messages directly due to cross-origin policy
+  // BUT the bot joining the room IS visible to others as a user entering
+  // This creates real activity in the room list
+}
+
+function startBots() {
+  if(botActive) return;
+  botActive = true;
+  
+  // Each bot joins a different BritChat room — creates activity across rooms
+  const botRooms = ['general','pub','sport','poker','news','music','gaming','dating'];
+  
+  BOTS.forEach((bot, i) => {
+    const room = botRooms[i % botRooms.length];
+    // Stagger bot joins so they don't all appear at once
+    setTimeout(() => {
+      botSendMessage(bot, room, BOT_GREETINGS[i % BOT_GREETINGS.length]);
+    }, (i+1) * 8000); // 8 seconds apart
+  });
+  
+  showToast('🤖 BritChat bots are warming up the rooms!', 3000);
+}
+
+function stopBots() {
+  botActive = false;
+  botTimers.forEach(t=>clearTimeout(t));
+  botTimers = [];
+  Object.values(botIframes).forEach(f=>{ try{f.src='about:blank';}catch(e){} });
+  showToast('🤖 Bots deactivated', 2000);
+}
+
+/* ── 4. AI-POWERED BOT RESPONSES (Claude API) ────────────── */
+// This opens the admin's Anthropic API to generate intelligent
+// bot responses. Bots respond to keywords typed in the chat.
+
+let aiCooldown = false;
+async function getAIBotResponse(userMessage, botPersona, roomName) {
+  if(aiCooldown) return null;
+  aiCooldown = true;
+  setTimeout(()=>aiCooldown=false, 30000); // 30s cooldown between AI responses
+  
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 80,
+        messages: [{
+          role: 'user',
+          content: `You are a ${botPersona} in the "${roomName}" chat room of BritChat UK. 
+Someone just said: "${userMessage}"
+Reply in character in 1-2 short sentences. Keep it casual, fun, British. No hashtags. Max 80 chars.`
+        }]
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+/* ── 5. IFRAME MESSAGE LISTENER ──────────────────────────── */
+// Listen for any postMessage events from the AddaChat iframe
+// If they emit events, we can react in real-time
+
+window.addEventListener('message', (event) => {
+  // Only listen to messages from AddaChat domains
+  const trusted = ['addachat.com','poo.com','htmlchat.org'];
+  if(!trusted.some(d => event.origin.includes(d))) return;
+  
+  // Log what we receive for debugging
+  console.log('[BritChat] iframe message:', event.data);
+  
+  // If AddaChat sends user count or activity data, show it
+  if(event.data && typeof event.data === 'object') {
+    if(event.data.users) updateUserCount(event.data.users);
+    if(event.data.message) showActivityPulse();
+  }
+  
+  // String-based events
+  if(typeof event.data === 'string') {
+    if(event.data.includes('message')) showActivityPulse();
+  }
+});
+
+/* ── 6. ACTIVITY PULSE ───────────────────────────────────── */
+function showActivityPulse() {
+  const el = document.getElementById('inst-status');
+  if(!el) return;
+  const orig = el.textContent;
+  el.style.color = 'var(--accent)';
+  el.textContent = '● Message received!';
+  setTimeout(()=>{ el.style.color=''; el.textContent=orig; }, 2000);
+}
+
+function updateUserCount(count) {
+  const el = document.getElementById('bn-live');
+  if(el) el.textContent = '🟢 '+count+' online';
+}
+
+/* ── 7. ROOM ACTIVITY DASHBOARD ──────────────────────────── */
+// Track which rooms are "hot" — show a glow effect on active rooms
+let roomActivity = {};
+function markRoomActive(roomId) {
+  roomActivity[roomId] = Date.now();
+  const btn = document.getElementById('sbr-'+roomId) || document.getElementById('pil-'+roomId);
+  if(btn){
+    btn.style.boxShadow = '0 0 8px rgba(68,204,68,.6)';
+    setTimeout(()=>{ if(btn) btn.style.boxShadow=''; }, 5000);
+  }
+}
+
+/* ── 8. WELCOME MESSAGE INJECTOR ─────────────────────────── */
+// When user first joins, post a welcome in a fun way
+// by reloading the frame with a special welcome room
+let hasWelcomed = false;
+function triggerWelcome() {
+  if(hasWelcomed || !me) return;
+  hasWelcomed = true;
+  // Show a welcome overlay
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:fadeIn .5s ease';
+  ov.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0d1b2a,#122012);border:2px solid rgba(80,180,60,.4);border-radius:20px;padding:28px 30px;text-align:center;pointer-events:auto;animation:slideUp .5s ease">
+      <div style="font-size:48px;margin-bottom:10px">${me.avatar||'🐒'}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:900;color:#f0c060;margin-bottom:6px">Welcome back, ${me.name||me.username}!</div>
+      <div style="font-size:13px;color:rgba(180,230,180,.6);margin-bottom:20px">You're joining as <b style="color:#44cc44">${buildChatName(me)}</b></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="this.closest('[style*=fixed]').remove();joinRoom('main')" style="padding:10px 20px;background:linear-gradient(135deg,#2d7a2d,#3aaa3a);border:none;border-radius:10px;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer">💬 Start Chatting</button>
+        <a href="https://pokerchimps.com/poker.html" style="padding:10px 20px;background:rgba(200,150,12,.2);border:1px solid rgba(200,150,12,.4);border-radius:10px;color:#f0c060;font-size:14px;font-weight:700;text-decoration:none;display:flex;align-items:center">🎰 Poker Chimps</a>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>{ ov.style.opacity='0'; ov.style.transition='opacity .5s'; setTimeout(()=>ov.remove(),500); },4000);
+}
+
+/* ── 9. FRAME TRANSPARENCY TRICK ─────────────────────────── */
+// We can pass frame transparency to blend the iframe into our bg
+// frameT=on makes the chat background transparent — our bg shows through!
+function toggleFrameTransparency(on) {
+  const r = ROOMS.find(x=>x.id===curRoom)||ROOMS[0];
+  const domain = DOMAINS[currentDomain];
+  const name = encodeURIComponent(buildChatName(me));
+  const room = encodeURIComponent(r.room||'main');
+  const inst = r.instance ? '&instance='+encodeURIComponent(r.instance) : '';
+  
+  let url = `https://${domain}/?name=${name}&room=${room}&bgs=on&bg=080f08&sidebar=on&format=on&images=on${inst}`;
+  if(on) url += '&frameT=on'; // Frame transparency — chat floats over our bg!
+  
+  document.getElementById('chat-frame').src = url;
+  showToast(on ? '✨ Transparent mode on' : '🎨 Solid mode on');
+}
+
+/* ── 10. ANIMATED GIF GREETER ────────────────────────────── */
+// When user enters a room, auto-post a GIF search URL in the chat
+// AddaChat has a built-in GIF search — format: [gif keyword]
+// We can pre-stage this for the user
+
+function suggestGIF(keyword) {
+  // The AddaChat GIF syntax: type a keyword into input and click GIF icon
+  // We can hint this to users
+  showToast('🎬 Type "'+keyword+'" in chat then tap the GIF button!', 4000);
+}
+
+/* ── 11. BACKGROUND IMAGE TRICK ──────────────────────────── */
+// AddaChat supports bg= with an image URL too!
+// We can set stunning backgrounds — poker table felt, UK skyline etc.
+const BG_THEMES = {
+  default:  { bg: '080f08',  bgs: 'on',  label: '🌑 Dark Green' },
+  felt:     { bg: '1a5c1a',  bgs: 'on',  label: '🎰 Poker Felt' },
+  midnight: { bg: '0a0a1a',  bgs: 'on',  label: '🌌 Midnight' },
+  forest:   { bg: '0d2614',  bgs: 'on',  label: '🌲 Forest' },
+  gold:     { bg: '1a1400',  bgs: 'on',  label: '✨ Gold Night' },
+};
+let currentTheme = 'default';
+
+function setTheme(themeKey) {
+  currentTheme = themeKey;
+  const t = BG_THEMES[themeKey] || BG_THEMES.default;
+  const r = ROOMS.find(x=>x.id===curRoom)||ROOMS[0];
+  const domain = DOMAINS[currentDomain];
+  const name = encodeURIComponent(buildChatName(me));
+  const room = encodeURIComponent(r.room||'main');
+  const inst = r.instance ? '&instance='+encodeURIComponent(r.instance) : '';
+  document.getElementById('chat-frame').src = `https://${domain}/?name=${name}&room=${room}&bgs=${t.bgs}&bg=${t.bg}&sidebar=on&format=on&images=on${inst}`;
+  showToast('Theme: '+t.label);
+}
+
+/* ── 12. OVERRIDE loadFrame TO USE EMOJI NAMES ───────────── */
+// Override the original loadFrame to use our emoji-enhanced name
+const _origLoadFrame = window.loadFrame;
+window.loadFrame = function(r) {
+  if(!me) return;
+  const domain = DOMAINS[currentDomain];
+  const t = BG_THEMES[currentTheme] || BG_THEMES.default;
+  
+  // THE MAGIC: buildChatName gives BritChat users their avatar prefix
+  // and gives AddaChat visitors a random emoji based on their username
+  const name = encodeURIComponent(buildChatName(me));
+  const room = encodeURIComponent(r.room||'main');
+  const inst = r.instance ? '&instance='+encodeURIComponent(r.instance) : '';
+
+  const url = `https://${domain}/?`
+    + `name=${name}`
+    + `&room=${room}`
+    + `&bgs=${t.bgs}`
+    + `&bg=${t.bg}`
+    + `&sidebar=on`
+    + `&format=on`
+    + `&images=on`
+    + inst;
+
+  document.getElementById('chat-frame').src = url;
+  document.getElementById('inst-status').textContent = '● '+domain;
+  
+  // Mark room as active
+  markRoomActive(r.id);
+};
+
+/* ── CSS ANIMATIONS ──────────────────────────────────────── */
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes glow{0%,100%{box-shadow:0 0 5px rgba(68,204,68,.3)}50%{box-shadow:0 0 20px rgba(68,204,68,.8)}}
+  
+  /* Theme switcher panel */
+  #theme-panel{
+    position:fixed;bottom:70px;right:10px;z-index:600;
+    background:linear-gradient(135deg,#0d1b2a,#122012);
+    border:1px solid rgba(80,180,60,.3);border-radius:14px;
+    padding:12px;display:none;flex-direction:column;gap:6px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+  }
+  #theme-panel.on{display:flex}
+  .tp-btn{
+    padding:7px 12px;border-radius:9px;border:1px solid rgba(80,180,60,.2);
+    background:rgba(255,255,255,.04);color:rgba(180,230,180,.8);
+    font-size:12px;font-weight:700;cursor:pointer;text-align:left;
+    font-family:'DM Sans',sans-serif;transition:all .15s;
+  }
+  .tp-btn:hover{background:rgba(80,180,60,.15);color:#fff}
+  .tp-btn.on{background:rgba(80,180,60,.25);border-color:rgba(80,180,60,.5);color:var(--accent)}
+  
+  /* Bot control panel */
+  #bot-panel{
+    position:fixed;bottom:70px;left:10px;z-index:600;
+    background:linear-gradient(135deg,#1a0d2a,#0d1a12);
+    border:1px solid rgba(150,80,200,.3);border-radius:14px;
+    padding:12px;display:none;flex-direction:column;gap:6px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:200px;
+  }
+  #bot-panel.on{display:flex}
+  .bp-title{font-size:11px;font-weight:800;color:rgba(180,130,240,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .bp-bot{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(150,80,200,.15)}
+  .bp-av{font-size:18px}
+  .bp-name{font-size:12px;font-weight:700;color:rgba(220,200,255,.8);flex:1}
+  .bp-status{width:8px;height:8px;border-radius:50%;background:#555}
+  .bp-status.live{background:var(--online);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  
+  /* Floating action buttons */
+  .fab-group{position:fixed;bottom:70px;right:10px;z-index:599;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .fab{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:all .2s}
+  .fab:hover{transform:scale(1.1)}
+  .fab-theme{background:linear-gradient(135deg,#1a3a1a,#2d5a2d);color:#44cc44}
+  .fab-bot{background:linear-gradient(135deg,#1a0d2a,#2d1a4a);color:#cc88ff}
+  .fab-trans{background:linear-gradient(135deg,#1a1a2a,#2a2a3a);color:#88aaff}
+`;
+document.head.appendChild(styleEl);
+
+/* ── BUILD FLOATING ACTION BUTTONS ──────────────────────── */
+function buildFABs() {
+  const group = document.createElement('div');
+  group.className = 'fab-group';
+  group.id = 'fab-group';
+  group.innerHTML = `
+    <button class="fab fab-bot" onclick="toggleBotPanel()" title="Bot Control">🤖</button>
+    <button class="fab fab-theme" onclick="toggleThemePanel()" title="Chat Theme">🎨</button>
+    <button class="fab fab-trans" onclick="toggleFrameTransparency(true)" title="Transparent Mode">✨</button>
+  `;
+  document.body.appendChild(group);
+  
+  // Theme panel
+  const tp = document.createElement('div');
+  tp.id = 'theme-panel';
+  tp.innerHTML = `
+    <div style="font-size:11px;font-weight:800;color:rgba(80,180,60,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Chat Theme</div>
+    ${Object.entries(BG_THEMES).map(([k,t])=>`<button class="tp-btn${k===currentTheme?' on':''}" onclick="setTheme('${k}');document.querySelectorAll('.tp-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${t.label}</button>`).join('')}
+    <button class="tp-btn" onclick="toggleFrameTransparency(false)" style="border-color:rgba(80,150,255,.3);color:rgba(150,200,255,.8)">🌑 Reset Theme</button>
+  `;
+  document.body.appendChild(tp);
+  
+  // Bot panel
+  const bp = document.createElement('div');
+  bp.id = 'bot-panel';
+  bp.innerHTML = `
+    <div class="bp-title">🤖 Bot Control Room</div>
+    ${BOTS.map((b,i)=>`<div class="bp-bot"><span class="bp-av">${b.av}</span><span class="bp-name">${b.name}</span><div class="bp-status" id="bst-${i}"></div></div>`).join('')}
+    <button onclick="startBots()" style="margin-top:4px;padding:8px;background:rgba(68,204,68,.15);border:1px solid rgba(68,204,68,.3);color:var(--accent);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--sans)">▶ Activate Bots</button>
+    <button onclick="stopBots()" style="padding:8px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.3);color:#ff8888;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--sans)">■ Stop Bots</button>
+    <div style="font-size:10px;color:rgba(180,130,240,.4);margin-top:4px;line-height:1.4">Bots join BritChat rooms as real users, creating activity and welcoming visitors</div>
+  `;
+  document.body.appendChild(bp);
+}
+
+function toggleThemePanel() {
+  document.getElementById('theme-panel').classList.toggle('on');
+  document.getElementById('bot-panel').classList.remove('on');
+}
+function toggleBotPanel() {
+  document.getElementById('bot-panel').classList.toggle('on');
+  document.getElementById('theme-panel').classList.remove('on');
+}
+
+// Update bot status indicators
+function updateBotStatus(index, live) {
+  const el = document.getElementById('bst-'+index);
+  if(el) el.classList.toggle('live', live);
+}
+
+/* ── INIT MAGIC SYSTEM ───────────────────────────────────── */
+function initMagic() {
+  buildFABs();
+  // Show welcome screen after short delay
+  setTimeout(triggerWelcome, 800);
+  // Close panels when clicking elsewhere
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('#theme-panel')&&!e.target.closest('.fab-theme')) document.getElementById('theme-panel')?.classList.remove('on');
+    if(!e.target.closest('#bot-panel')&&!e.target.closest('.fab-bot')) document.getElementById('bot-panel')?.classList.remove('on');
+  });
+}
+
+</script>
+</body>
+</html>
